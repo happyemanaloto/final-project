@@ -1,0 +1,15 @@
+"
+python-dotenv
+openai>=1
+langchain
+langchain-openai
+langchain-community
+chromadb
+faiss-cpu
+pydantic>=2
+rapidfuzz
+langdetect
+youtube-transcript-api
+yt-dlp
+openai-whisper
+"
