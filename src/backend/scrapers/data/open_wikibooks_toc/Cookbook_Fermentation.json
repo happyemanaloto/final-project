@@ -1,0 +1,34 @@
+{
+  "source": "wikibooks",
+  "source_url": "https://en.wikibooks.org/wiki/Cookbook%3AFermentation",
+  "license": "CC BY-SA 3.0",
+  "attribution": {
+    "project": "Wikibooks",
+    "title": "Cookbook:Fermentation",
+    "url": "https://en.wikibooks.org/wiki/Cookbook%3AFermentation",
+    "notice": "Text available under CC BY-SA 3.0; attribution and share-alike required."
+  },
+  "recipe": {
+    "title": "Cookbook:Fermentation",
+    "ingredients": [
+      "Tastes different, bringing new, often strong flavours to the source foods",
+      "Is easier to digest",
+      "Is more nutritious",
+      "Lasts longer"
+    ],
+    "steps": [
+      "Cookbook | Recipes | Ingredients | Equipment | Techniques | Cookbook Disambiguation Pages | Cooking techniques",
+      "Fermentation is the process of controlling bacteria, yeast, and molds to modify food, producing a desired product.",
+      "Fermentation can improve food so that it:",
+      "As with any food preparation, there are certain aspects of the fermentation process that can change the quality and acceptability of the end product. Here are some of the important ones that are generally applicable; check individual recipes for special tips and variations.",
+      "Selecting good quality ingredients is important when fermenting food. It doesn't generally matter if the ingredients aren't picture perfect – cider vinegar won't look or taste any different for using ugly apples – but avoid using old, rotting, or very dirty food. Remember that a fermentation is where yeast and bacteria are given a chance to multiply, so give your ferment a fighting chance and stick to good quality ingredients.",
+      "Many ferments use salt . Salt helps by inhibiting undesirable bacteria and molds, and by drawing juices out of foods. It is best to use a salt that has no anti-caking agents or iodine added to it, as these can inhibit the fermentation and growth of desirable bacteria. Iodine is an effective antibacterial agent, and even the very small amounts used in iodised salt can affect the bacterial growth. Salt suitable for fermenting is often called \"pickling salt\" or \"Kosher salt\".",
+      "When adding water to a fermentation, avoid chlorinated water if possible. Chlorine is added to municipal water supplies to prevent the build-up of bacteria and other water-borne microorganisms, and as such can inhibit a fermentation.",
+      "Tap water can be made chlorine-free in most areas simply by boiling it and letting it cool again, or even just by leaving it in an uncovered pot overnight. This doesn't work in areas where the water is chlorinated by adding chloramine to the water, a practice done specifically to keep the chlorine in the water. Many modern water filters will remove both chlorine and chloramine, however."
+    ],
+    "servings": null,
+    "cook_time_minutes": null,
+    "cuisine": null,
+    "tools": null
+  }
+}

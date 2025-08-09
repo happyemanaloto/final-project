@@ -1,0 +1,26 @@
+{
+  "source": "wikibooks",
+  "source_url": "https://en.wikibooks.org/wiki/Cookbook%3ASubstitutions",
+  "license": "CC BY-SA 3.0",
+  "attribution": {
+    "project": "Wikibooks",
+    "title": "<span class=\"mw-page-title-namespace\">Cookbook</span><span class=\"mw-page-title-separator\">:</span><span class=\"mw-page-title-main\">Substitutions</span>",
+    "url": "https://en.wikibooks.org/wiki/Cookbook%3ASubstitutions",
+    "notice": "Text available under CC BY-SA 3.0; attribution and share-alike required."
+  },
+  "recipe": {
+    "title": "<span class=\"mw-page-title-namespace\">Cookbook</span><span class=\"mw-page-title-separator\">:</span><span class=\"mw-page-title-main\">Substitutions</span>",
+    "ingredients": [
+      "1/2 cup evaporated milk",
+      "1/2 cup water"
+    ],
+    "steps": [
+      "Cookbook | Recipes | Ingredients | Equipment | Techniques | Cookbook Disambiguation Pages",
+      "Leave to curdle for 10-20 minutes if possible."
+    ],
+    "servings": null,
+    "cook_time_minutes": null,
+    "cuisine": null,
+    "tools": null
+  }
+}

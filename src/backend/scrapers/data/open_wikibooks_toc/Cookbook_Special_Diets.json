@@ -1,0 +1,46 @@
+{
+  "source": "wikibooks",
+  "source_url": "https://en.wikibooks.org/wiki/Cookbook%3ASpecial_Diets",
+  "license": "CC BY-SA 3.0",
+  "attribution": {
+    "project": "Wikibooks",
+    "title": "Cookbook:Special Diets",
+    "url": "https://en.wikibooks.org/wiki/Cookbook%3ASpecial_Diets",
+    "notice": "Text available under CC BY-SA 3.0; attribution and share-alike required."
+  },
+  "recipe": {
+    "title": "Cookbook:Special Diets",
+    "ingredients": [
+      "Atkins Diet Cooking (Weight-loss; Low Carb )",
+      "Caloric Restriction with Optimal Nutrition (General health, life-extension)",
+      "Eat Clean Diet (Weight-loss; No preservatives)",
+      "Gluten-Free (Wheat-, barley-, and rye-free)",
+      "High Protein Diet (Weight-loss)",
+      "Halal food (Religious)",
+      "Karma Free (Religious)",
+      "Kosher food (Religious)",
+      "Lactose-free Cooking (Allergies; free of unfermented and untreated milk)",
+      "Low-allergen Cooking (Allergies)",
+      "Low Carb Cooking",
+      "Low-fat Cooking (General Health)",
+      "Low-GI Diet (Diabetic)",
+      "Low-sodium Cooking (General Health)",
+      "Macrobiotic Cooking (General Health)",
+      "Paleolithic (Paleo) Diet (General Health)",
+      "Pritikin Cooking (Weight-loss)",
+      "Raw Diet (Ethical; Religious; General health)",
+      "South Beach Diet Cooking (Weight-loss; Low-GI/GL)",
+      "Vegetarian cuisine (Ethical; Religious; General Health)",
+      "Vegan cuisine (Ethical; Religious; General Health)",
+      "Weight Watchers Recipes (Weight-loss)"
+    ],
+    "steps": [
+      "Cookbook | Recipes | Ingredients | Equipment | Techniques | Cookbook Disambiguation Pages | Special diets",
+      "Food is an individual preference, but often there are medical reasons for choosing a particular special diet. Other people are trying to lose or maintain weight, or dealing with food allergies, or have ethical or religious preferences that dictate the foods they will eat. The following is a list of major diets and the reasons for following those diets."
+    ],
+    "servings": null,
+    "cook_time_minutes": null,
+    "cuisine": null,
+    "tools": null
+  }
+}

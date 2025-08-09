@@ -1,0 +1,34 @@
+{
+  "source": "wikibooks",
+  "source_url": "https://en.wikibooks.org/wiki/Cookbook%3ACanning",
+  "license": "CC BY-SA 3.0",
+  "attribution": {
+    "project": "Wikibooks",
+    "title": "Cookbook:Canning",
+    "url": "https://en.wikibooks.org/wiki/Cookbook%3ACanning",
+    "notice": "Text available under CC BY-SA 3.0; attribution and share-alike required."
+  },
+  "recipe": {
+    "title": "Cookbook:Canning",
+    "ingredients": [
+      "Two-piece lid mason jars. Wide-mouth style on the left and regular mouth to the right.",
+      "Single-piece jar (lug thread)",
+      "Weck-type jars and lids",
+      "Bail-style jar (not recommended)"
+    ],
+    "steps": [
+      "Cookbook | Recipes | Ingredients | Equipment | Techniques | Cookbook Disambiguation Pages | Cooking techniques",
+      "Canning is a method of preservation that sterilizes and seals food in airtight containers.",
+      "The ultimate purpose of canning is to preserve the safety and quality of foods for an extended period of time at ambient temperature. Several types of spoilage can happen to foods over time. The first—simple discoloration and the development of off-flavors—is relatively harmless but typically still undesirable. These issues are commonly caused by enzymatic activity and exposure to ambient oxygen in the environment. [ 1 ] A more concerning type of spoilage involves the growth of microbes that, if consumed, can cause significant illness. These include 'bad' molds and bacteria, [ 1 ] the former of which is generally visibly apparent, and the latter of which can be harder to detect. Mold takes a little while to grow, but bacteria can grow very rapidly—on the order of hours—and colonize contaminated food. [ 2 ] Conditions favorable to this kind of spoilage include moist, nutrient-rich environments at ambient temperature. [ 1 ]",
+      "One of the most dangerous types of spoilage, especially with respect to canning, is botulism. [ 2 ] Spores of Clostridium botulinum bacteria are widely present in the environment, including in agricultural products, and they normally pose little to no danger to healthy adults. [ 3 ] However, when the spores are left in a moist, low-oxygen, low-acid environment around ambient temperature (all conditions sometimes found in canned or other foods), [ 2 ] [ 3 ] they quickly multiply and produce a very potent and dangerous neurotoxin that can be rapidly fatal if ingested. [ 3 ]",
+      "To prevent moisture loss and off-flavors, it is simple enough to seal foods in a jar with little to no air, but this doesn't address microbial spoilage. Currently, the two components used in canning to prevent such microbial spoilage are heat and acidity. Boiling food for a prescribed amount of time (specific to a given recipe and altitude) is usually sufficient to kill most spoilage bacteria and molds (e.g. Campylobacter , Listeria , Salmonella , yeast etc). [ 2 ] [ 4 ] However, it is very difficult to kill botulism spores at the temperatures achieved by boiling—it would take hours and hours of continuous boiling to do so, [ 3 ] which is not feasible for reasons of both practicality final food quality. If you want to destroy botulism spores, you must use a pressure canner to achieve high enough temperatures (upwards of 240–250°F/115–121°C) that will eliminate them in a reasonable time frame. [ 2 ] [ 3 ] [ 5 ] [ 6 ] [ 7 ]",
+      "Now, with acidic-enough foods, it is possible to eliminate the danger of botulism with just boiling water and not a pressure canner. [ 2 ] [ 8 ] Because the botulism bacteria cannot grow in a high-acid environment (i.e. uniformly and well below a pH of 4.6 throughout the food), [ 4 ] it does not matter if the spores are not destroyed; the bacteria cannot grow and produce the botulinum toxin. [ 4 ] [ 9 ] Note, still, that other spoilage microbes aside from botulism bacteria are not inhibited by the same acidic conditions alone, which is why acidic foods must still be processed in boiling water. [ 4 ] And, heating the jars can help drive acidity into the individual components of a mixture, ensuring even acidity throughout. [ 4 ] Furthermore, growth of some other microbes can reduce the acidity of their environment and make a food vulnerable to botulism even if it started off acidic enough to confer protection. Some unreliable sources may say that botulism bacteria growth can be prevented with sufficient sugar or salt, but this is incorrect with the concentrations of sugar in salt used in canned prepared foods. [ 10 ] While high sugar and salt can suppress some microbial growth at the concentrations used in some preparations, they do not protect against all microbial growth, and least of all botulism. [ 11 ]",
+      "Generally, foods to be canned are classified as low-acid or high-acid. Examples of low-acid foods are most fresh vegetables, dairy, meats, and seafood, as well as products made with these. [ 2 ] [ 3 ] [ 5 ] [ 12 ] Examples of high-acid foods, which can usually be boiling water-canned, include many (but not all) fruits, fermented pickles, and fruit preserves (e.g. jams and jellies). [ 2 ] [ 3 ] [ 13 ] [ 14 ] In some low-acid foods, recipes call for them to be acidified—that is, they have acid added to them (often in the form of lemon juice, citric acid, or vinegar) to bring them to safe levels. [ 3 ] Common examples include figs, tomatoes, tomato sauces, and salsas. [ 3 ] Interestingly, though tomatoes are commonly thought of as acidic, there is enough variation among them to require acidification for ensured safety. [ 2 ] [ 3 ]",
+      "According to the USDA, one way to destroy existing botulism toxin and make it less dangerous is to boil food for 10 minutes below 1,000 ft of altitude, adding an additional minute per 1,000 ft above that point; [ 3 ] however, this should not be construed as a recommendation to consume foods you suspect to be contaminated with botulism. Rather, it is for harm reduction purposes only."
+    ],
+    "servings": null,
+    "cook_time_minutes": null,
+    "cuisine": null,
+    "tools": null
+  }
+}

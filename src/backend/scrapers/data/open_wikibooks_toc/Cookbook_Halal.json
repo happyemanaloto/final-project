@@ -1,0 +1,26 @@
+{
+  "source": "wikibooks",
+  "source_url": "https://en.wikibooks.org/wiki/Cookbook%3AHalal",
+  "license": "CC BY-SA 3.0",
+  "attribution": {
+    "project": "Wikibooks",
+    "title": "Cookbook:Halal",
+    "url": "https://en.wikibooks.org/wiki/Cookbook%3AHalal",
+    "notice": "Text available under CC BY-SA 3.0; attribution and share-alike required."
+  },
+  "recipe": {
+    "title": "Cookbook:Halal",
+    "ingredients": [
+      "All types of fish are halal, and don't have to be slaughtered. Shi'ites do have a restriction against shellfish, but Sunnis do not."
+    ],
+    "steps": [
+      "Cookbook | Recipes | Ingredients | Equipment | Techniques | Cookbook Disambiguation Pages | Special diets",
+      "Halal (حلال‎) is the Arabic word for 'allowed' or 'permissible', and is used as a generic term used to describe anything which is lawful or allowed in Islam. Halal is a label given to foods which are ceremonially slaughtered according to Muslim traditions, as stated in the Qu'ran.  It is similar to the Jewish tradition of Kosher food (i.e., pork is not allowed), and has a common origin in early monotheistic scripture.",
+      "Muslims are only allowed to eat meat from animals or birds which have been slaughtered in a particular fashion. The animal must be cut with a sharp knife across the neck in such a fashion that its blood is drained. During the slaughtering, Allah's name is also mentioned as a way of showing gratitude."
+    ],
+    "servings": null,
+    "cook_time_minutes": null,
+    "cuisine": null,
+    "tools": null
+  }
+}

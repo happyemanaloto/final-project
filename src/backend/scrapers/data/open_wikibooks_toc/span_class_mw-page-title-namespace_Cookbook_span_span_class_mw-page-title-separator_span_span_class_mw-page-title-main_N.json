@@ -1,0 +1,22 @@
+{
+  "source": "wikibooks",
+  "source_url": "https://en.wikibooks.org/wiki/Cookbook%3ANuts_and_seeds",
+  "license": "CC BY-SA 3.0",
+  "attribution": {
+    "project": "Wikibooks",
+    "title": "<span class=\"mw-page-title-namespace\">Cookbook</span><span class=\"mw-page-title-separator\">:</span><span class=\"mw-page-title-main\">Nuts and seeds</span>",
+    "url": "https://en.wikibooks.org/wiki/Cookbook%3ANuts_and_seeds",
+    "notice": "Text available under CC BY-SA 3.0; attribution and share-alike required."
+  },
+  "recipe": {
+    "title": "<span class=\"mw-page-title-namespace\">Cookbook</span><span class=\"mw-page-title-separator\">:</span><span class=\"mw-page-title-main\">Nuts and seeds</span>",
+    "ingredients": [
+      "Cookbook:Nuts and Seeds"
+    ],
+    "steps": [],
+    "servings": null,
+    "cook_time_minutes": null,
+    "cuisine": null,
+    "tools": null
+  }
+}

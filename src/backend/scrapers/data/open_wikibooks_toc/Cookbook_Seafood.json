@@ -1,0 +1,27 @@
+{
+  "source": "wikibooks",
+  "source_url": "https://en.wikibooks.org/wiki/Cookbook%3ASeafood",
+  "license": "CC BY-SA 3.0",
+  "attribution": {
+    "project": "Wikibooks",
+    "title": "Cookbook:Seafood",
+    "url": "https://en.wikibooks.org/wiki/Cookbook%3ASeafood",
+    "notice": "Text available under CC BY-SA 3.0; attribution and share-alike required."
+  },
+  "recipe": {
+    "title": "Cookbook:Seafood",
+    "ingredients": [
+      "The Monterey Bay Aquarium's Seafood Watch Program offers suggestions on what seafood to choose based on environmental impact and fishery health."
+    ],
+    "steps": [
+      "Cookbook | Recipes | Ingredients | Equipment | Techniques | Cookbook Disambiguation Pages | Ingredients | Basic foodstuffs",
+      "Seafood is derived from aquatic animals, such as fish, mollusks, and crustaceans. These animals provide protein in many diets around the world. The harvesting of seafood is called \"fishing. \"",
+      "The term is not restricted to sea creatures, but may include fresh-water animals as well. This class of foods, perhaps unexpectedly to some, may also include land snails.",
+      "The plants of the sea are often also edible, including nori , which is actually a type of algae, and is usually classified as a vegetable, rather than a seafood."
+    ],
+    "servings": null,
+    "cook_time_minutes": null,
+    "cuisine": null,
+    "tools": null
+  }
+}

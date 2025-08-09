@@ -1,0 +1,24 @@
+{
+  "source": "wikibooks",
+  "source_url": "https://en.wikibooks.org/wiki/Cookbook%3ABreakfast",
+  "license": "CC BY-SA 3.0",
+  "attribution": {
+    "project": "Wikibooks",
+    "title": "<span class=\"mw-page-title-namespace\">Cookbook</span><span class=\"mw-page-title-separator\">:</span><span class=\"mw-page-title-main\">Breakfast</span>",
+    "url": "https://en.wikibooks.org/wiki/Cookbook%3ABreakfast",
+    "notice": "Text available under CC BY-SA 3.0; attribution and share-alike required."
+  },
+  "recipe": {
+    "title": "<span class=\"mw-page-title-namespace\">Cookbook</span><span class=\"mw-page-title-separator\">:</span><span class=\"mw-page-title-main\">Breakfast</span>",
+    "ingredients": [],
+    "steps": [
+      "Cookbook | Recipes | Ingredients | Equipment | Techniques | Cookbook Disambiguation Pages",
+      "Breakfast is the first meal of the day, eaten in the morning to break the fasting period of sleep. Breakfast traditions vary greatly around the world, from the minimal Café au lait of France to the hearty spreads of the substantial English Breakfast . A breakfast should provide enough energy to realize the daily activity until noon or lunch but it should also be light enough as to be easy to digest.",
+      "For a complete, automatically generated list of recipes, see Category:Appetizer recipes , or browse the subcategories below."
+    ],
+    "servings": null,
+    "cook_time_minutes": null,
+    "cuisine": null,
+    "tools": null
+  }
+}

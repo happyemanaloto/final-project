@@ -1,0 +1,28 @@
+{
+  "source": "wikibooks",
+  "source_url": "https://en.wikibooks.org/wiki/Cookbook%3ALow-GI_Diet",
+  "license": "CC BY-SA 3.0",
+  "attribution": {
+    "project": "Wikibooks",
+    "title": "Cookbook:Low-GI Diet",
+    "url": "https://en.wikibooks.org/wiki/Cookbook%3ALow-GI_Diet",
+    "notice": "Text available under CC BY-SA 3.0; attribution and share-alike required."
+  },
+  "recipe": {
+    "title": "Cookbook:Low-GI Diet",
+    "ingredients": [],
+    "steps": [
+      "Cookbook | Recipes | Ingredients | Equipment | Techniques | Cookbook Disambiguation Pages | Special diets",
+      "Low-GI diet refers to a diet that advocates consumption of foods with a low glycaemic index (GI).  The glycaemic index measures the rate at which the body converts the carbohydrate in a given food to glucose (blood sugar).  A low-GI diet is useful for people with diabetes, as either their bodies' insulin production is deficient or their bodies are insulin resistant, restricting their ability to metabolise glucose. Thus a lower GI diet causes less variation in blood glucose levels which makes the condition easier to manage.",
+      "Low-GI diets have benefits for non-diabetics also.  A high-GI diet results in peaks and troughs of energy throughout the day, whereas a low-GI diet results in a good level of sustained energy.  Low-GI foods also tend to have a longer satisfaction period per calorie given the slow energy release, which is useful in maintaining a healthy weight loss/control diet.",
+      "It should be noted that, since the glycaemic index measures the rate at which the carbohydrate in the food is converted into glucose, it can be misleading for foods with a low quantity of carbohydrate. The carbohydrate in carrot has a medium GI but, since a carrot only is about 7% carbohydrate, it has a relatively small effect on the blood glucose.  For this reason, some people advocate use of the glycaemic load (GL) instead, which is simply the GI divided by 100, times the quantity of carbohydrate (in grams).",
+      "Foods such as meat which have no carbohydrate have no GI.",
+      "A GI of up to 55 is low, 56-69 medium and 70+ high.  Glucose has a GI of 100.",
+      "A GL of 10 or less is low, 11-19 medium and 20+ high."
+    ],
+    "servings": null,
+    "cook_time_minutes": null,
+    "cuisine": null,
+    "tools": null
+  }
+}

@@ -1,0 +1,29 @@
+{
+  "source": "wikibooks",
+  "source_url": "https://en.wikibooks.org/wiki/Cookbook%3ALeavening_Agent",
+  "license": "CC BY-SA 3.0",
+  "attribution": {
+    "project": "Wikibooks",
+    "title": "Cookbook:Leavening Agent",
+    "url": "https://en.wikibooks.org/wiki/Cookbook%3ALeavening_Agent",
+    "notice": "Text available under CC BY-SA 3.0; attribution and share-alike required."
+  },
+  "recipe": {
+    "title": "Cookbook:Leavening Agent",
+    "ingredients": [],
+    "steps": [
+      "Cookbook | Recipes | Ingredients | Equipment | Techniques | Cookbook Disambiguation Pages | Ingredients | Basic foodstuffs",
+      "Leavening agents are those components that fill doughs and batters with pockets of gas. [ 1 ] [ 2 ] [ 3 ] [ 4 ] [ 5 ]",
+      "The basic principle of leavening is the incorporation, generation, and/or expansion of gas in(to) a mixture. This leavening is then made permanent by the setting of these gas cells into a more solid structure. Though the exact mechanism of action varies slightly depending on the type of leavening used, the same general process proceeds for all types. First, seed pockets of air are incorporated into a raw dough or batter. [ 6 ] [ 7 ] If not sufficiently aerated, these pockets must then increase in size through the generation and/or expansion of gas, [ 3 ] [ 8 ] which can occur through heat and other processes, depending. [ 6 ] For example, water expands and turns to steam when heated. [ 6 ] The expanded pockets must then set into a sturdy structure before they rupture and gas ultimately escapes from the mixture. [ 3 ] [ 6 ] [ 7 ] If the structure does not set, it will deflate when the gas escapes or shrinks back down. [ 6 ]",
+      "Note that the incorporation of seed air cells in the raw product is critical to texture in baking, since these cells will expand but not develop de novo during baking—too few or too many air cells can impact the crumb and texture of the final baked product. [ 6 ] Since the expanding gases tend to move into existing air cells, [ 3 ] [ 5 ] a small number of cells will create an irregular and coarse structure of pockets. [ 6 ]",
+      "The gases that most commonly play a role during the leavening process are atmospheric air, carbon dioxide gas, and steam, [ 3 ] [ 6 ] [ 7 ] though others can also play a role. Atmospheric air leavens when it's incorporated into a mixture, steam develops when moisture in the mixture is heated, and carbon dioxide can evolve through a few different mechanisms. Individual leavening agents are typically categorized into three main groups—physical/mechanical, biological, and chemical—based on the way the gas pockets develop. [ 2 ] [ 5 ] [ 6 ] [ 9 ]",
+      "The principal and simplest physical leavening agent is room air, [ 6 ] [ 7 ] which is incorporated into the mixture by mechanical agitation. [ 7 ] [ 9 ] Sifting, beating, creaming, and whipping/foaming are all ways of incorporating air pockets into a mixture, [ 3 ] [ 5 ] [ 7 ] [ 9 ] though the amount of air varies by technique and ingredients.",
+      "The second common physical leavener is steam. [ 6 ] As water in the mixture heats up, it turns to steam and expands by over 1000 times, [ 3 ] [ 6 ] expanding the air cells in the process. Any water-containing ingredient (e.g. eggs, milk, etc) will contribute to the steam. [ 6 ] [ 7 ] Note that the oven must be properly hot for maximal evaporation and steam leavening, [ 3 ] [ 6 ] and preparations leavened mainly by steam usually need to be cooked in a fairly hot oven. [ 6 ] [ 9 ] Choux pastry and puff pastry are examples of products leavened almost entirely by steam. [ 3 ] [ 5 ] [ 6 ]",
+      "This type of leavening is done primarily by yeast, [ 3 ] which ferment sugars and produce carbon dioxide gas as a byproduct. [ 3 ] [ 6 ] [ 9 ] This carbon dioxide expands the air pockets and leavens the mixture. [ 3 ] Among the leaveners, biological leavening is somewhat slow, requiring long rest periods to allow the fermentation to take place. [ 9 ]"
+    ],
+    "servings": null,
+    "cook_time_minutes": null,
+    "cuisine": null,
+    "tools": null
+  }
+}

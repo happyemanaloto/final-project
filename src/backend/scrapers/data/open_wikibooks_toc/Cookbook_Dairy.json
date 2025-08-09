@@ -1,0 +1,38 @@
+{
+  "source": "wikibooks",
+  "source_url": "https://en.wikibooks.org/wiki/Cookbook%3ADairy",
+  "license": "CC BY-SA 3.0",
+  "attribution": {
+    "project": "Wikibooks",
+    "title": "Cookbook:Dairy",
+    "url": "https://en.wikibooks.org/wiki/Cookbook%3ADairy",
+    "notice": "Text available under CC BY-SA 3.0; attribution and share-alike required."
+  },
+  "recipe": {
+    "title": "Cookbook:Dairy",
+    "ingredients": [
+      "Cow's milk",
+      "Thick yogurt",
+      "Buttermilk",
+      "Dairy curds",
+      "Cottage cheese",
+      "Cheese",
+      "Butter",
+      "Quark"
+    ],
+    "steps": [
+      "Cookbook | Recipes | Ingredients | Equipment | Techniques | Cookbook Disambiguation Pages | Ingredients | Basic foodstuffs",
+      "Dairy ingredients are generally the products of milk and are used in a variety of different ways. [ 1 ] Almost all of the dairy consumed by humans is derived from domesticated herbivores, such as cows, goats, sheep, buffalo, etc. [ 1 ] Dairy products from cows are most prominent globally, but many cultures and specialty products rely on other animal sources.",
+      "Most dairy products have a white or off-white color and a mild, slightly sweet flavor—the exception is fermented dairy products (e.g. yogurt, cheese), which develop more complex flavors, textures, and colorations as a result of the microbial action on the initial milk or cream. [ 2 ] [ 3 ] Unless the fat has been removed, dairy products are rich, but the final fat content depends on the processing techniques. [ 3 ]",
+      "All dairy products begin with milk , which is then processed in a variety of ways to make different products:",
+      "Most dairy products—especially fresh ones—are perishable, and they must be stored carefully in the refrigerator. Fermented, cured , and pasteurized dairy products have a longer shelf life, but some may still be perishable, depending on the method of production.",
+      "Dairy products have a wide range of uses in cooking, where they typically contribute to flavor and texture. [ 1 ] [ 4 ] Both the proteins and sugars in dairy products can contribute to the maillard reaction , resulting in the generation of browning and complex flavors. [ 2 ] Yeasted products especially benefit from this, as the yeast cannot break down the added lactose. [ 5 ] Dairy products containing fat will also contribute richness, tenderness, and flavor to dishes. [ 2 ] [ 5 ] Fermented dairy products can add acidity. All dairy products will also contribute moisture, although the amount will depend on the specific product.",
+      "People abstain from dairy as a category for a variety of reasons. Health-wise, a large number of adults are lactose intolerant, which requires them to avoid certain dairy products, [ 3 ] most often fresh dairy products where the lactose has not been broken down by fermentation. Individuals may also be allergic to some of the proteins in milk, which typically prevents the consumption of all dairy products. Under the Jewish laws of kashrut , dairy products may not be combined with meat. Vegans abstain from all animal products, including dairy. Individuals with lactose intolerance may need",
+      "Sometimes, different dairy products can substitute for each other, depending on the exact characteristics called for in the original recipe. You'll want to assess the moisture content, fat content, and acidity and choose/modify a substitute to match the original characteristics as much as possible. Similarly, in certain circumstances, dairy products can be substituted by non-dairy ingredients, depending on the function of the dairy in the original recipe. [ 4 ] It will, however, be harder to match the flavor profile and milkfat characteristics."
+    ],
+    "servings": null,
+    "cook_time_minutes": null,
+    "cuisine": null,
+    "tools": null
+  }
+}

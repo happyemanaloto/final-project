@@ -1,0 +1,25 @@
+{
+  "source": "wikibooks",
+  "source_url": "https://en.wikibooks.org/wiki/Cookbook%3ABroiling",
+  "license": "CC BY-SA 3.0",
+  "attribution": {
+    "project": "Wikibooks",
+    "title": "Cookbook:Broiling",
+    "url": "https://en.wikibooks.org/wiki/Cookbook%3ABroiling",
+    "notice": "Text available under CC BY-SA 3.0; attribution and share-alike required."
+  },
+  "recipe": {
+    "title": "Cookbook:Broiling",
+    "ingredients": [],
+    "steps": [
+      "Cookbook | Recipes | Ingredients | Equipment | Techniques | Cookbook Disambiguation Pages | Cooking techniques",
+      "Broiling or Grilling is the use of radiant heat for cooking, usually called grilling in British and Australian English and broiling in US English. Typically this is done in an electric oven , using only the upper heating element, with the door partially open. Gas ovens often provide a  very effective lower drawer for broiling.  Gas ovens, in a way analogous to gas ranges, provide a hotter, flame-based heat source that is preferred by most cooks over electric broilers.  This is where the term \"flame broiled\" comes from.",
+      "Broiling is used to retain the juices of meat while developing flavor. Broiling does not soften the fibers of tough meat. It is best used for tender meat, including poultry . Broiling is not the most economical way of cooking, and the browning of meat can create carcinogenic (albeit tasty) chemicals.",
+      "The food should be exposed to intense heat last, to ensure even cooking and less juice escaping. How does that work? Heat damages surface proteins that keep the juice in. The higher the heat, the more damage. So, contrary to popular belief, searing before cooking through will NOT lock in the juices. The food that is being broiled should be turned just once. Once the outside is browned, the heat may need to be reduced to ensure that the center will cook before the outside burns."
+    ],
+    "servings": null,
+    "cook_time_minutes": null,
+    "cuisine": null,
+    "tools": null
+  }
+}

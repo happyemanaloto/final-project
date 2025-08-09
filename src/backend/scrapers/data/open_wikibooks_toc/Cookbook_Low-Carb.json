@@ -1,0 +1,25 @@
+{
+  "source": "wikibooks",
+  "source_url": "https://en.wikibooks.org/wiki/Cookbook%3ALow-Carb",
+  "license": "CC BY-SA 3.0",
+  "attribution": {
+    "project": "Wikibooks",
+    "title": "Cookbook:Low-Carb",
+    "url": "https://en.wikibooks.org/wiki/Cookbook%3ALow-Carb",
+    "notice": "Text available under CC BY-SA 3.0; attribution and share-alike required."
+  },
+  "recipe": {
+    "title": "Cookbook:Low-Carb",
+    "ingredients": [],
+    "steps": [
+      "Cookbook | Recipes | Ingredients | Equipment | Techniques | Cookbook Disambiguation Pages | Special diets",
+      "Low-carb diet is a general term referring to numerous specific diets that advocate for a reduction of carbohydrate intake as a healthier balance of foods. The concept is based on the fact that grain -based foods cause the body to store the fat it consumes rather than burning it for fuel. Low-carb diets, in various prescriptions, favor \"complex carbs\" (vegetables) over \"simple carbs\" (grains and starches), while also reducing the consumption of saturated fat in favor of unsaturated fat .",
+      "The Atkins Diet is the most well-known and heavily marketed low-carb diet, though its specified prescriptions for regimented protein intake are controversial. The South Beach diet is also well known, though more generalized. The Zone diet is controversial because it prescribes a balance between carbs, fat, and protein according to a \"40:30:30\" ratio.",
+      "It's important to note that both the Atkins and Zone diets are controversial due to the specific claims or prescriptions they make. Further, both are business trade names for diets and are considered proprietary and licensed franchises (though to a different degree). However, the basic general principles of low-carb dieting are not intellectual property, and likewise, the general ideas about proportions and balance in these specific diets are free to examine and learn from."
+    ],
+    "servings": null,
+    "cook_time_minutes": null,
+    "cuisine": null,
+    "tools": null
+  }
+}

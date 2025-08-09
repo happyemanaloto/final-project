@@ -1,0 +1,29 @@
+{
+  "source": "wikibooks",
+  "source_url": "https://en.wikibooks.org/wiki/Cookbook%3ADessert",
+  "license": "CC BY-SA 3.0",
+  "attribution": {
+    "project": "Wikibooks",
+    "title": "<span class=\"mw-page-title-namespace\">Cookbook</span><span class=\"mw-page-title-separator\">:</span><span class=\"mw-page-title-main\">Dessert</span>",
+    "url": "https://en.wikibooks.org/wiki/Cookbook%3ADessert",
+    "notice": "Text available under CC BY-SA 3.0; attribution and share-alike required."
+  },
+  "recipe": {
+    "title": "<span class=\"mw-page-title-namespace\">Cookbook</span><span class=\"mw-page-title-separator\">:</span><span class=\"mw-page-title-main\">Dessert</span>",
+    "ingredients": [
+      "Brownies",
+      "Cheesecake",
+      "Cookies",
+      "Pie",
+      "Galaktoboureko"
+    ],
+    "steps": [
+      "Cookbook | Recipes | Ingredients | Equipment | Techniques | Cookbook Disambiguation Pages",
+      "Typically, a dessert is a food that comes at the end of a meal. Its taste is usually sweet, but sometimes strong, as with many cheeses. The word comes from the Old French desservir , meaning \"to clear the table.\" Common desserts include cakes, cookies, fruits, pastries, pies, ice cream, and candies."
+    ],
+    "servings": null,
+    "cook_time_minutes": null,
+    "cuisine": null,
+    "tools": null
+  }
+}

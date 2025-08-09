@@ -1,0 +1,35 @@
+{
+  "source": "wikibooks",
+  "source_url": "https://en.wikibooks.org/wiki/Cookbook%3AGluten-Free",
+  "license": "CC BY-SA 3.0",
+  "attribution": {
+    "project": "Wikibooks",
+    "title": "Cookbook:Gluten-Free",
+    "url": "https://en.wikibooks.org/wiki/Cookbook%3AGluten-Free",
+    "notice": "Text available under CC BY-SA 3.0; attribution and share-alike required."
+  },
+  "recipe": {
+    "title": "Cookbook:Gluten-Free",
+    "ingredients": [
+      "Amy's Kitchen produces gluten-free soup in cans. Amy's tests every batch of gluten free products to 20ppm to ensure that they are Gluten Free.",
+      "Campbell's Soups are not gluten-free; wheat is used as a thickener.",
+      "Pacific and Imagine soups produce many gluten-free broths and soups packaged in cartons.",
+      "Progresso soups label foods that contain the top allergens such as wheat, milk, eggs, soy, etc.; some are gluten-free. Always read ingredient labels. Pearled barley is barley, and is not gluten-free.",
+      "Thai Kitchen produces soup in cans and rice noodle/broth packages; many are gluten-free, always check labels."
+    ],
+    "steps": [
+      "Cookbook | Recipes | Ingredients | Equipment | Techniques | Cookbook Disambiguation Pages | Special diets",
+      "Gluten is a protein most notably found in wheat , but also present in a number of other common grains .  It permits the flexibility of wheat flour as a baking material.  Gluten's elasticity allows the cells that form in bread, and keep baked goods from crumbling.  The elasticity of gluten increases when it is worked and decreases if it is permitted to rest.",
+      "Gluten is present in the following grains: wheat (including spelt and triticale ), barley , and rye and almost any foods made therefrom; although oats are not themselves dangerous they are (certainly in the USA) contaminated to some degree with wheat and must be, at best, a suspect ingredient.  Gluten may be present in many unexpected places. Fermented, undistilled alcoholic beverages made from these grains do contain gluten, as may such seemingly innocuous products as cold cuts, soy sauce , or hard candies. Additionally, many ingredients that are commonly found in processed foods, such as modified food starch, can be made from wheat and therefore contain gluten.",
+      "Another place you will find gluten, though not obvious, is in the production of many foods that do not contain wheat or substances in their ingredients. One common example of this are foods that do not contain gluten in their recipe, but the conveyor belts where the food is processed is dusted with flour to prevent sticking. Many \"energy bars\" fit this description.",
+      "There is no other way to know if this is the case by reading the label; you must call the vendor to be sure.",
+      "This diet is necessary for those with gluten sensitivity, gluten intolerance and auto-immune diseases like Celiac Disease . A gluten-free diet can be useful for those suffering from an allergy to one or more of the grains (mainly wheat, barley and rye) this diet excludes. There are over 190 medical conditions that have been linked to gluten sensitivity and gluten intolerance, Celiac Disease being one of them.  Celiac Disease is often still undiagnosed. Some people find that a gluten-free diet is beneficial for children with autism . It should be noted, however, that there is no evidence for an autism-gluten link. A distinction is important, because wheat and gluten are high quality food sources, not to be rejected on the basis of unfounded speculation.",
+      "It is important to note that Celiac Disease is NOT itself an allergy, but an auto-immune disorder - the body rejects its own digestive proteins used to process gluten and produces antibodies against them. In essence, the body is fighting itself, in the presence of gluten, and doing damage to the small intestine in the process. Celiac Disease becomes a two-fold issue due to the damage done to the villi in the small intestine creating a nutrient malabsorption problem that is not reversible.",
+      "Careful and constant reading of ingredients is necessary to purchase truly gluten free foods. If flour (which means \"wheat flour\" unless otherwise specified), starch (including \"modified food starch\", \"food starch\"), malt, or any grain containing gluten is present, do not purchase the food. Unfortunately for the person with gluten sensitivity or gluten intolerance, it may be necessary to also investigate every step of the handling of the products, due to widespread wheat contamination of certain foods by way of shared equipment, containers, and processing rooms. Cross contamination is a big issue that many do not think about when it comes to storing, handling and preparing food.  Finally the utensils, equipment, and surfaces for cooking and eating must be free of accumulations containing gluten, especially ones which have been hardened on by heat, especially in toasters and bakeware."
+    ],
+    "servings": null,
+    "cook_time_minutes": null,
+    "cuisine": null,
+    "tools": null
+  }
+}

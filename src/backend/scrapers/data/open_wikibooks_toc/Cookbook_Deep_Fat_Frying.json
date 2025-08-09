@@ -1,0 +1,33 @@
+{
+  "source": "wikibooks",
+  "source_url": "https://en.wikibooks.org/wiki/Cookbook%3ADeep_Fat_Frying",
+  "license": "CC BY-SA 3.0",
+  "attribution": {
+    "project": "Wikibooks",
+    "title": "Cookbook:Deep Fat Frying",
+    "url": "https://en.wikibooks.org/wiki/Cookbook%3ADeep_Fat_Frying",
+    "notice": "Text available under CC BY-SA 3.0; attribution and share-alike required."
+  },
+  "recipe": {
+    "title": "Cookbook:Deep Fat Frying",
+    "ingredients": [
+      "Turn off your deep fryer, and allow the oil to cool.",
+      "It is likely not acutely dangerous – the fire point and kindling point are generally significantly higher than the smoke point, so the oil will not ignite without further heating – but it is extremely hot, and smoke is a warning sign.",
+      "Next time, use a lower temperature setting or choose an oil with a higher smoke point ."
+    ],
+    "steps": [
+      "Cookbook | Recipes | Ingredients | Equipment | Techniques | Cookbook Disambiguation Pages | Cooking techniques | Frying",
+      "Deep frying involves fully immersing food in hot oil . It is an extremely fast cooking method, and, despite the use of liquid oil , is best classified as a dry cooking method because it does not involve liquid water.",
+      "With a deep fat fryer, deep frying is reasonably safe, but hot cooking oil is intrinsically dangerous, and one should be very careful so as to avoid fires and/or severe burns.",
+      "Deep frying does not actually make the food greasy if it is done properly. The water in the food repels the oil. However, the hot oil also boils the water within the food, and steams the food from the inside out. As long as the oil is hot enough and the food is not immersed in the oil for too long, no oil will enter the food itself. If the food stays in the oil too long, the water will steam out and the oil will penetrate the food. If the oil is too cool, the food won't be done before this happens.",
+      "Most fried recipes rely on either a coating of batter or breading, or on foods that have or produce a natural skin around the food such as potatoes or whole poultry with the skin on. The effect of this is that the outside of the food becomes crispy and browned while the inside is tender, moist, and steamed, similar to searing. Of course, the batter can absorb huge amounts of fat and is usually consumed along with the food, causing the total fat content ingested to increase tremendously.",
+      "Chip pans can be dangerous and should only be used with caution and when continuously supervised, preferably with a thermometer; deep fryers are safer. Chip pans are the leading cause of house fires in the UK, and further, may spill hot oil, causing severe burns. If you have a chip pan, your local fire brigade may offer to trade it in for a deep fryer, or can otherwise advise about the dangers.",
+      "When the oil starts to give off continuous smoke, you have it far too hot – it is at the smoke point , and the oil becomes carcinogenic at this point.",
+      "In case of fire, call the fire department immediately."
+    ],
+    "servings": null,
+    "cook_time_minutes": null,
+    "cuisine": null,
+    "tools": null
+  }
+}

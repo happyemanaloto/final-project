@@ -1,0 +1,29 @@
+{
+  "source": "wikibooks",
+  "source_url": "https://en.wikibooks.org/wiki/Cookbook%3AEquipment",
+  "license": "CC BY-SA 3.0",
+  "attribution": {
+    "project": "Wikibooks",
+    "title": "Cookbook:Equipment",
+    "url": "https://en.wikibooks.org/wiki/Cookbook%3AEquipment",
+    "notice": "Text available under CC BY-SA 3.0; attribution and share-alike required."
+  },
+  "recipe": {
+    "title": "Cookbook:Equipment",
+    "ingredients": [],
+    "steps": [
+      "Cookbook | Recipes | Ingredients | Equipment | Techniques | Cookbook Disambiguation Pages | Cookbook equipment",
+      "Various types of equipment are used in a kitchen.  One of the Wikibooks Cookbook's goals is to have an article on each, including uses, alternative equipment if you don't have the exact item, and a buying guide.",
+      "Kitchen hand tools are small, hand-held tools that aid in cutting, slicing, stirring, combining, moving and serving. They usually have no or very few moving parts. Hand tools should be selected for sturdiness, durability, and safety.",
+      "The list of hand tools used in the kitchen is seemingly endless. Stick to the what you need for the kind of cooking you do. Add new ones carefully to avoid a drawer full of tools you don't need. \"Time-saving gadgets\" are usually single-purpose tools whose cost far exceeds their usefulness. For example, a mandoline is very useful if you slice a lot of vegetable frequently or you need uniform slices for appearance; however, the time getting it out, setting it up and cleaning after use is not time very well spent if you are making a single salad.",
+      "Appliances are larger tools, either with a power source (such as electricity) or a more complex design with moving parts.",
+      "Appliances tend to be expensive, and in some cases, such as refrigerators and ovens, they may be built into the kitchen, which means you get little choice about which type to have.  Even when you buy the appliance, you will probably only get one, or sometimes two, so you should consider your actual needs, including portability and storage.  Many appliances can help you cook a variety of foods.  For example, an electric blender can be used to purée baby food, soup, fruit smoothies, and milkshakes, as well as to mix thin batters and sauces.",
+      "Pots and pans are necessary for most kinds of cooking.  The number and type you need depend on what you want to cook, but most home cooks need a small number:  a larger pot for boiling pasta or making soup, a frying pan for everyday cooking, and a sheet pan or casserole dish to go in the oven.  Your cooking appliances may require a specific type of cookware.  For example, induction ranges require metallic pots with perfectly flat bottoms, and microwave ovens require non-metallic, microwave-safe dishes.",
+      "To create a new equipment page yourself, enter your title directly behind the Cookbook prefix below."
+    ],
+    "servings": null,
+    "cook_time_minutes": null,
+    "cuisine": null,
+    "tools": null
+  }
+}

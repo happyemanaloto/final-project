@@ -1,0 +1,28 @@
+{
+  "source": "wikibooks",
+  "source_url": "https://en.wikibooks.org/wiki/Cookbook%3AVegetable",
+  "license": "CC BY-SA 3.0",
+  "attribution": {
+    "project": "Wikibooks",
+    "title": "Cookbook:Vegetable",
+    "url": "https://en.wikibooks.org/wiki/Cookbook%3AVegetable",
+    "notice": "Text available under CC BY-SA 3.0; attribution and share-alike required."
+  },
+  "recipe": {
+    "title": "Cookbook:Vegetable",
+    "ingredients": [
+      "Fruit",
+      "Nut",
+      "Fungus"
+    ],
+    "steps": [
+      "Cookbook | Recipes | Ingredients | Equipment | Techniques | Cookbook Disambiguation Pages | Ingredients | Vegetables | Basic Foodstuffs",
+      "The vegetables commonly used in cooking are listed below. Note that some vegetables that are botanically fruits are still considered to be vegetables in the culinary sense and are listed here.",
+      "For a complete list of vegetables, see Category:Vegetables or browse below:"
+    ],
+    "servings": null,
+    "cook_time_minutes": null,
+    "cuisine": null,
+    "tools": null
+  }
+}

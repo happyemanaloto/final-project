@@ -1,0 +1,33 @@
+{
+  "source": "wikibooks",
+  "source_url": "https://en.wikibooks.org/wiki/Cookbook%3AUnits_of_measurement",
+  "license": "CC BY-SA 3.0",
+  "attribution": {
+    "project": "Wikibooks",
+    "title": "Cookbook:Units of measurement",
+    "url": "https://en.wikibooks.org/wiki/Cookbook%3AUnits_of_measurement",
+    "notice": "Text available under CC BY-SA 3.0; attribution and share-alike required."
+  },
+  "recipe": {
+    "title": "Cookbook:Units of measurement",
+    "ingredients": [
+      "ml or mL , also milliliter , millilitre , cc (cubic centimeter)",
+      "l or L , also liter , litre ,",
+      "dl or dL , also deciliter , decilitre"
+    ],
+    "steps": [
+      "Cookbook | Recipes | Ingredients | Equipment | Techniques | Cookbook Disambiguation Pages | Units of measurement",
+      "Recipes from different parts of the world use different units of measurement . This page is a guide to those that are most commonly used in cooking which follow metric units , imperial units , and US customary units .",
+      "Metric units are made up of a base unit and a scale modifier . Each type of measurement has its own base unit. The modifiers are shared between all units. The relevant base units for cooking are:",
+      "In cooking the old unit Liter (l) is commonly used to measure volume. One liter is (exactly) equal to 0.001 cubic meters, or 1 cubic deci meter, written like: 1 l = 1 dm 3 . The prefix modifiers can be used with any unit and thus 1 cl (centiliter) is equal to 1/100 of a liter. The unit for volume is derived from the unit for length. Two lengths forms an area , which is length x length and has the derived unit square meter (m 2 ). Three lengths forms the volume metric m 3 . This has the consequence that a m 3 is equal to 1000 dm 3 , that is 10 3 = 10x10x10.",
+      "Some recipes in Wikibooks Cookbook use American measurement units ( pounds and ounces, Fahrenheit, fluid ounces and pints, etc. ) and some recipes use metric units ( grammes and kilograms, Celsius, milliliter, etc. ).  An attempt to ensure that all Cookbook recipes use metric units (alone or alongside American units) is an ongoing job.  A list of recipes which have been confirmed as having metric units can be found here .",
+      "Approximate conversions based on water density.\nThese conversions are useful for more than just water.  \nAlthough other things have different densities, they are good enough\nfor most estimates.",
+      "Water has a density of exactly 1 g/cm³",
+      "An American stick of butter is 1/4 lb, and is divided into 8 tablespoons. So, 1 tbsp butter = 1/2 oz butter."
+    ],
+    "servings": null,
+    "cook_time_minutes": null,
+    "cuisine": null,
+    "tools": null
+  }
+}

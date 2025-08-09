@@ -1,0 +1,27 @@
+{
+  "source": "wikibooks",
+  "source_url": "https://en.wikibooks.org/wiki/Cookbook%3ASweeteners",
+  "license": "CC BY-SA 3.0",
+  "attribution": {
+    "project": "Wikibooks",
+    "title": "Cookbook:Sweeteners",
+    "url": "https://en.wikibooks.org/wiki/Cookbook%3ASweeteners",
+    "notice": "Text available under CC BY-SA 3.0; attribution and share-alike required."
+  },
+  "recipe": {
+    "title": "Cookbook:Sweeteners",
+    "ingredients": [
+      "White sugar",
+      "Brown sugar",
+      "A magnified view of sugar crystals"
+    ],
+    "steps": [
+      "Cookbook | Recipes | Ingredients | Equipment | Techniques | Cookbook Disambiguation Pages | Ingredients | Basic foodstuffs",
+      "A sweetener is a food additive which adds the basic taste of sweetness to a food; it may come from a natural source or it may be artificially manufactured."
+    ],
+    "servings": null,
+    "cook_time_minutes": null,
+    "cuisine": null,
+    "tools": null
+  }
+}
