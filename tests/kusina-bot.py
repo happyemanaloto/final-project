@@ -79,6 +79,11 @@ EXPORTS_DIR   = Path(r"C:\Users\happy\Documents\ironhack\kusina-bot\final-projec
 LLM_MODEL  = os.getenv("CHEF_BOT_MODEL", "gpt-4o-mini")
 EMB_MODEL  = os.getenv("CHEF_EMBED_MODEL", "text-embedding-3-small")
 
+CHEF_TEMP = float(os.getenv("CHEF_TEMP", "0.5"))
+
+def llm_zero():
+    return ChatOpenAI(model=LLM_MODEL, temperature=CHEF_TEMP)
+
 # FORCE_REPLY_LANG = os.getenv("CHEF_FORCE_REPLY_LANG")  or "en"
 FORCE_REPLY_LANG = os.getenv("CHEF_FORCE_REPLY_LANG")  
 
@@ -127,13 +132,43 @@ _add("bn","bengali","বাংলা")
 _add("ur","urdu","اردو")
 _add("fa","farsi","persian","فارسی")
 _add("sw","swahili","kiswahili")
+# Philippines languages
+_add("pam", "kapampangan", "pampangan", "pampango", "capampangan", "pampangueño", "pampangueo")
+_add("ilo", "ilocano", "ilokano", "iloko")
+_add("ceb", "cebuano", "bisaya", "binisaya", "sugbuanon", "visayan")
+# Arabic dialects
+_add("ary", "moroccan arabic", "moroccan", "darija", "derija", "ddarija", "العربية المغربية", "الدارجة")
+_add("arz", "egyptian arabic", "egyptian", "masri", "masry", "العربية المصرية", "لهجة مصرية")
 
+# def parse_language_switch(text: str) -> Optional[str]:
+#     t = (text or "").strip().lower()
+#     t = re.sub(r"[^\w\s\-]", "", t)  # strip punctuation
 
+#     # A) Explicit commands: "/lang ko", "switch to korean", "reply in pt-br", etc.
+#     m = re.search(
+#         r"(?:^|[\s:/])(?:/lang|lang(?:uage)?|switch|reply|answer|speak|use|set|respond)\s*"
+#         r"(?:to|in|:)?\s*([a-z][a-z0-9\- ]+)\s*$",
+#         t
+#     )
+#     if m:
+#         key = re.sub(r"\s+", " ", m.group(1).strip())
+#         return LANG_ALIASES.get(key)
+
+#     # B) Bare full language name ONLY if the whole message is just that name
+#     if t in LANG_ALIASES and len(t) > 2:
+#         return LANG_ALIASES[t]
+
+#     # C) Bare 2-letter or hyphen code ONLY if the whole message is just the code
+#     if (re.fullmatch(r"[a-z]{2}", t) or re.fullmatch(r"[a-z]{2}-[a-z]{2}", t)) and t in LANG_ALIASES:
+#         return LANG_ALIASES[t]
+
+#     # Otherwise, don't switch (prevents "ako" triggering 'ko')
+#     return None
 def parse_language_switch(text: str) -> Optional[str]:
     t = (text or "").strip().lower()
     t = re.sub(r"[^\w\s\-]", "", t)  # strip punctuation
 
-    # A) Explicit commands: "/lang ko", "switch to korean", "reply in pt-br", etc.
+    # A) Explicit commands you already have...
     m = re.search(
         r"(?:^|[\s:/])(?:/lang|lang(?:uage)?|switch|reply|answer|speak|use|set|respond)\s*"
         r"(?:to|in|:)?\s*([a-z][a-z0-9\- ]+)\s*$",
@@ -143,7 +178,26 @@ def parse_language_switch(text: str) -> Optional[str]:
         key = re.sub(r"\s+", " ", m.group(1).strip())
         return LANG_ALIASES.get(key)
 
-    # B) Bare full language name ONLY if the whole message is just that name
+    # NEW: catch "<language> please" or "in <language> please"
+    m2 = re.search(r"(?:^|[\s])translate\s+.+?\s(?:to|into|in)\s+([a-z][a-z0-9\- ]+)\s*$", t)
+    # m2 = re.search(r"^(?:in\s+)?([a-z][a-z0-9\- ]+)\s+(?:please|pls)\s*$", t)
+    if m2:
+        key = re.sub(r"\s+", " ", m2.group(1).strip())
+        return LANG_ALIASES.get(key)
+
+    # "<language> please" or "in <language> please"
+    m3 = re.search(r"^(?:in\s+)?([a-z][a-z0-9\- ]+)\s+(?:please|pls)\s*$", t)
+    if m3:
+        key = re.sub(r"\s+", " ", m3.group(1).strip())
+        return LANG_ALIASES.get(key)
+
+    # add this after your other regex checks
+    m4 = re.search(r"^\s*(?:in|en)\s+([a-z][a-z0-9\- ]+)\s*$", t)
+    if m4:
+        key = re.sub(r"\s+", " ", m4.group(1).strip())
+        return LANG_ALIASES.get(key)
+
+    # B) Bare full language name ONLY if whole message is just the name
     if t in LANG_ALIASES and len(t) > 2:
         return LANG_ALIASES[t]
 
@@ -151,7 +205,6 @@ def parse_language_switch(text: str) -> Optional[str]:
     if (re.fullmatch(r"[a-z]{2}", t) or re.fullmatch(r"[a-z]{2}-[a-z]{2}", t)) and t in LANG_ALIASES:
         return LANG_ALIASES[t]
 
-    # Otherwise, don't switch (prevents "ako" triggering 'ko')
     return None
 
 # =========================
@@ -161,12 +214,14 @@ class RecipeDoc(BaseModel):
     id: str
     title: str
     url: str
-    source: str  # "youtube" | "wikibooks"
+    source: str  # "youtube" | "wikibooks" | …
     image_url: Optional[str] = None
     ingredients: List[str] = Field(default_factory=list)
     steps: List[str] = Field(default_factory=list)
     cuisine: Optional[str] = None
     cook_time_minutes: Optional[int] = None
+    servings: Optional[int] = None
+    dietary_tags: List[str] = Field(default_factory=list)  # e.g., ["vegan", "gluten-free"]
     extras: Dict[str, Any] = Field(default_factory=dict)
 
     @property
@@ -326,23 +381,37 @@ def _doc_to_embed_text(d: RecipeDoc) -> str:
 #     vs = FAISS.from_texts(texts=texts, embedding=embed, metadatas=metas)
 #     vs.save_local(str(persist_dir))
 #     return vs
-
 def build_or_load_vectorstore(docs, persist_dir: Path, rebuild: bool=False):
     embed = OpenAIEmbeddings(model=EMB_MODEL)
     persist_dir.mkdir(parents=True, exist_ok=True)
+
     texts, metas = [], []
     for d in docs:
+        # rich page content for retrieval/summaries
         texts.append("\n".join([
             d.title or "",
             f"Cuisine: {d.cuisine}" if d.cuisine else "",
             "Ingredients:\n" + "\n".join(d.ingredients or []),
             "Steps:\n" + "\n".join(d.steps or []),
         ]).strip())
+
         metas.append({
-            "id": d.id, "title": d.title, "url": d.url, "source": d.source,
-            "image_url": d.image_url, "cuisine": d.cuisine, "cook_time": d.cook_time_minutes
+            "id": d.id,
+            "title": d.title,
+            "url": d.url,
+            "source": d.source,
+            "image_url": d.image_url,
+            "cuisine": d.cuisine,
+            "cook_time": d.cook_time_minutes,
+            "servings": d.servings,
+            # store lists as JSON strings (OK for Chroma)
+            "ingredients_json": json.dumps(d.ingredients or [], ensure_ascii=False),
+            "steps_json": json.dumps(d.steps or [], ensure_ascii=False),
+            "dietary_tags_json": json.dumps(d.dietary_tags or [], ensure_ascii=False),
+            # optional: quick text for simple filtering/search
+            "ingredients_text": "; ".join(d.ingredients or []),
         })
-    # rebuild or first run
+
     if rebuild or not (persist_dir / "chroma.sqlite").exists():
         vs = Chroma.from_texts(texts=texts, embedding=embed, metadatas=metas,
                                persist_directory=str(persist_dir))
@@ -353,9 +422,6 @@ def build_or_load_vectorstore(docs, persist_dir: Path, rebuild: bool=False):
 # =========================
 # LLM helpers (translate + prefs)
 # =========================
-def llm_zero():
-    return ChatOpenAI(model=LLM_MODEL, temperature=0)
-
 TRANS_PROMPT = ChatPromptTemplate.from_messages([
     ("system", "Translate to English. Return translation if it is not English."),
     ("human", "{text}")
@@ -365,7 +431,8 @@ def translate_to_english(text: str) -> str:
     if not text:
         return text
     try:
-        if lang_detect(text) == "en":
+        cands = detect_langs(text)  # e.g., [en:0.76, tl:0.23]
+        if cands and cands[0].lang == "en" and cands[0].prob >= 0.6:
             return text
     except Exception:
         pass
@@ -385,14 +452,19 @@ class Prefs(BaseModel):
     servings: Optional[int] = None
     allergens: Optional[List[str]] = None
     goals: Optional[List[str]] = None
+    include_ingredients: Optional[List[str]] = None   # NEW
+    exclude_ingredients: Optional[List[str]] = None   # NEW
     free_text: Optional[str] = None
 
 PREFS_PROMPT = ChatPromptTemplate.from_messages([
     ("system",
-     "Extract user cooking preferences as JSON for fields: "
+     "Extract user cooking preferences as compact JSON with keys: "
      "language,cuisine,part_of_meal,part_of_day,heavy_or_light,time_minutes,"
-     "difficulty,budget,available_ingredients,servings,allergens,goals,free_text. "
-     "If not present, set null. Respond with JSON only."),
+     "difficulty,budget,available_ingredients,servings,allergens,goals,"
+     "include_ingredients,exclude_ingredients,free_text. "
+     "Infer include_ingredients from any explicit wants; infer exclude_ingredients from phrases like "
+     "'no X', 'without Y', 'avoid Z', 'allergic to W'. "
+     "Return JSON only."),
     ("human", "{text}")
 ])
 
@@ -458,36 +530,161 @@ def transcribe_media(url_or_path: str) -> str:
 DOCS: List[RecipeDoc] = []
 KIDX: Optional[KeywordIndex] = None
 VS = None
+LAST_HITS: List[Dict[str, Any]] = []  # <-- NEW: cache last recipe candidates
+
 
 # =========================
 # Tools (for the Agent)
 # =========================
+def _as_list(v):
+    if isinstance(v, list):
+        return v
+    if isinstance(v, str):
+        try:
+            j = json.loads(v)
+            if isinstance(j, list):
+                return j
+        except Exception:
+            # fallback: split on common separators
+            return [s.strip() for s in re.split(r"[\n;,•·]", v) if s.strip()]
+    return []
+
+# helper to skip category/landing pages and empty stubs
+def is_real_recipe(ings, steps, meta):
+    title = (meta.get("title") or "").lower()
+    url = (meta.get("url") or "").lower()
+    # reject obvious Wikibooks category/landing pages
+    if "cookbook%3a" in url and ("category" in url or "appetizers" in url or "breakfast" in url):
+        return False
+    # must have at least some real content
+    if len(ings) < 2 and len(steps) < 2:
+        return False
+    return True
+
+# simple ingredient translations (extend anytime)
+ING_TRANSLATIONS = {
+    "tl": {
+        "lime juice": "katas ng dayap",
+        "lime": "dayap",
+        "red onion": "pulang sibuyas",
+        "onion": "sibuyas",
+        "garlic": "bawang",
+        "cilantro": "wansoy",
+        "tomato": "kamatis",
+        "jalapeño": "siling jalapeño",
+        "scallion": "dahong sibuyas",
+        "soy sauce": "toyo",
+        "sesame oil": "mantikang linga",
+        "lettuce leaves": "dahon ng litsugas",
+        "tortilla chips": "tortilla chips",
+        "shrimp": "hipon",
+        "scallops": "scallops",
+        "salt": "asin",
+        "pepper": "paminta",
+    }
+}
+
+def localize_ingredients(ings: List[str], lang: Optional[str]) -> List[str]:
+    mapping = ING_TRANSLATIONS.get((lang or "").lower())
+    if not mapping:
+        return ings
+    # longest-first to avoid partial overlaps
+    keys = sorted(mapping.keys(), key=len, reverse=True)
+    def repl_line(s: str) -> str:
+        t = s
+        for k in keys:
+            t = re.sub(rf"(?i)\b{re.escape(k)}\b", mapping[k], t)
+        return t
+    return [repl_line(i) for i in ings]
+
 class VSearchArgs(BaseModel):
     query: str
     top_k: int = 3
     time_limit: Optional[int] = None
+    cuisine: Optional[str] = None
+    must_include: Optional[List[str]] = None
+    exclude_ingredients: Optional[List[str]] = None
+    avoid_allergens: Optional[List[str]] = None
+    display_lang: Optional[str] = None   # <— NEW
 
 @tool("vector_search", args_schema=VSearchArgs)
-def tool_vector_search(query: str, top_k: int = 3, time_limit: Optional[int] = None) -> str:
-    """Semantic search over title+ingredients+steps+cuisine (FAISS/OpenAI embeddings)."""
+def tool_vector_search(query: str, top_k: int = 3, time_limit: Optional[int] = None,
+                       cuisine: Optional[str] = None, must_include: Optional[List[str]] = None,
+                       exclude_ingredients: Optional[List[str]] = None,
+                       avoid_allergens: Optional[List[str]] = None,
+                       display_lang: Optional[str] = None) -> str:
+    """Semantic search with filters; returns content ready to summarize."""
     global VS
     if VS is None:
         return json.dumps({"hits": [], "note": "vector store not ready"})
-    docs_scores = VS.similarity_search_with_score(query, k=max(6, top_k * 3))
+
+    meta_filter = {}
+    if cuisine:
+        meta_filter["cuisine"] = cuisine
+    filter_arg = meta_filter or None
+
+    docs_scores = VS.similarity_search_with_score(
+        query, k=max(8, top_k * 3), filter=filter_arg
+    )
+
+    def contains_any(items, needles):
+        text = " ".join(items or []).lower()
+        return any(n in text for n in needles)
+
+    inc = [x.lower() for x in (must_include or [])]
+    exc = [x.lower() for x in (exclude_ingredients or [])]
+    alr = [x.lower() for x in (avoid_allergens or [])]
+
     ranked = []
-    for doc, score in docs_scores:
+    for doc, dist in docs_scores:
         m = doc.metadata
-        penalty = 0.0
+        ings = _as_list(m.get("ingredients_json") or m.get("ingredients") or m.get("ingredients_text"))
+        steps = _as_list(m.get("steps_json") or m.get("steps"))
+        tags  = _as_list(m.get("dietary_tags_json") or m.get("dietary_tags"))
+
+        if not is_real_recipe(ings, steps, m):        continue
+        if inc and not contains_any(ings, inc):       continue
+        if exc and contains_any(ings, exc):           continue
+        if alr and contains_any(ings, alr):           continue
+
+        # distance -> relevance in [0,1]
+        base = 1.0 - float(dist if dist is not None else 1.0)
+        base = max(0.0, min(1.0, base))
+
+        # time penalty
+        score = base
         ct = m.get("cook_time")
         if time_limit and isinstance(ct, int) and ct > time_limit:
             overflow = ct - time_limit
-            penalty = min(5.0, overflow / 20.0)
-        ranked.append((score + penalty, m))
-    ranked.sort(key=lambda x: x[0])
-    hits = [{
-        "id": m["id"], "title": m["title"], "url": m["url"],
-        "image_url": m.get("image_url"), "source": m["source"]
-    } for _, m in ranked[:top_k]]
+            score -= min(0.5, overflow / 60.0)
+
+        # ✅ localize per-hit, then append
+        ings_local = localize_ingredients(ings, display_lang)
+        ranked.append((score, doc, ings, steps, tags, ings_local))
+
+    ranked.sort(key=lambda x: x[0], reverse=True)
+
+    hits = []
+    for score, doc, ings_en, steps, tags, ings_local in ranked[:top_k]:
+        m = doc.metadata
+        hits.append({
+            "id": m.get("id"),
+            "title": m.get("title"),
+            "url": m.get("url"),
+            "source": m.get("source"),
+            "image_url": m.get("image_url"),
+            "cuisine": m.get("cuisine"),
+            "cook_time": m.get("cook_time"),
+            "servings": m.get("servings"),
+            "dietary_tags": tags,
+            "ingredients": ings_en,                # original (English) for tools
+            "ingredients_display": ings_local,     # localized for UI
+            "steps": steps[:4],
+            "content": doc.page_content[:1000],
+        })
+    # cache for follow-up commands like "shopping list for these"
+    global LAST_HITS
+    LAST_HITS = hits
     return json.dumps({"hits": hits})
 
 class KSearchArgs(BaseModel):
@@ -575,34 +772,186 @@ def tool_create_cookbook(recipe_ids: List[str], language: Optional[str] = "en", 
     out_path = EXPORTS_DIR / f"cookbook_{dt.datetime.now().strftime('%Y%m%d_%H%M%S')}.md"
     out_path.write_text("\n".join(lines), encoding="utf-8")
     return json.dumps({"path": str(out_path)})
+# ---- Optional: Nutrition estimation ----
+class NutriArgs(BaseModel):
+    ingredients: List[str]
+    servings: Optional[int] = 2
+    locale: Optional[str] = "EU"
+
+@tool("estimate_nutrition", args_schema=NutriArgs)
+def tool_estimate_nutrition(ingredients: List[str], servings: Optional[int] = 2, locale: Optional[str] = "EU") -> str:
+    """Estimate calories and macros per serving from an ingredient list.
+    Returns a JSON string with numeric fields (per serving), e.g.:
+    {"calories_kcal": 520, "protein_g": 28, "carbs_g": 45, "fat_g": 24}.
+    """
+    prompt = ChatPromptTemplate.from_messages([
+        ("system", "Estimate nutrition per serving from ingredient list. Return compact JSON numbers."),
+        ("human", "Ingredients:\n{ings}\nServings: {serv}\nLocale: {loc}")
+    ])
+    out = (prompt | llm_zero()).invoke({"ings":"\n".join(ingredients), "serv": servings, "loc": locale})
+    return out.content
+
+# ---- Optional: Shopping list aggregator ----
+class ShopArgs(BaseModel):
+    recipes: Optional[List[Dict[str, Any]]] = None  
+    servings_multiplier: Optional[float] = 1.0
+    target_lang: Optional[str] = None 
+
+@tool("make_shopping_list", args_schema=ShopArgs)
+def tool_make_shopping_list(recipes: Optional[List[Dict[str, Any]]] = None,
+                            servings_multiplier: Optional[float] = 1.0,
+                            target_lang: Optional[str] = None) -> str:
+    """Aggregate ingredients across recipes into a normalized shopping list.
+    Input: list of recipes (each with title and ingredients) and an optional servings_multiplier.
+    Returns a grouped list (by aisle) with merged quantities and simple substitutions (as text/JSON).
+    """
+        # fallback to cached hits if recipes not supplied
+    if not recipes:
+        from typing import cast
+        global LAST_HITS
+        recipes = cast(List[Dict[str, Any]], LAST_HITS) or []
+
+    # keep only what's needed (title + ingredients)
+    slim = []
+    for r in recipes:
+        ings = r.get("ingredients") or r.get("ingredients_display") or []
+        if isinstance(ings, str):
+            ings = [ings]
+        slim.append({"title": r.get("title"), "ingredients": ings})
+
+    prompt = ChatPromptTemplate.from_messages([
+        ("system",
+         "Aggregate a concise shopping list from the given recipes. "
+         "Group by aisle/category (Produce, Pantry, Dairy, Meat/Seafood, Bakery, Frozen, Other). "
+         "Merge duplicates with summed quantities when obvious. "
+         "Add brief cheaper substitutions where relevant. "
+         "Keep it tidy with bullets. Write in the target language if provided."),
+        ("human", "Target language: {lang}\nServings x: {mult}\n\nRecipes:\n{payload}")
+    ])
+    out = (prompt | llm_zero()).invoke({
+        "lang": target_lang or "en",
+        "mult": servings_multiplier or 1.0,
+        "payload": json.dumps({"recipes": slim}, ensure_ascii=False)
+    })
+    return out.content.strip()
+
+class TranslateArgs(BaseModel):
+    text: str
+    target_lang: str  # e.g., "pam", "ilo", "ceb", "tl", "ary", "arz"
+
+@tool("translate_text", args_schema=TranslateArgs)
+def tool_translate_text(text: str, target_lang: str) -> str:
+    """Translate the given text into the target language. Preserve formatting (lists, numbers),
+    keep culinary terms natural for the locale, and return ONLY the translated text."""
+    prompt = ChatPromptTemplate.from_messages([
+        ("system",
+         "You are a careful translator. Translate into the target language. "
+         "Preserve bullets, numbers, and line breaks. Use natural culinary terms. "
+         "Return ONLY the translated text, no preface or notes."),
+        ("human", "Target language: {lang}\n\nText:\n{txt}")
+    ])
+    out = (prompt | llm_zero()).invoke({"lang": target_lang, "txt": text})
+    return out.content.strip()
+
 
 # =========================
 # Agent system prompt
 # =========================
-SYSTEM = SystemMessage(content=(
-"You are a chef and nutritionist chatbot who assists people worldwide, adapting to cravings, time, skill, "
-"price sensitivity, health goals, and budget.\n"
-"Reply in the language specified by 'reply_language' inside USER_REQUEST_JSON. "
-"If it is not provided, mirror the user's message language. Do not switch languages on your own.\n"
-"1) If the user provided audio/video, call transcribe_media first.\n"
-"2) Translate the request to English for search, but reply in 'reply_language'.\n"
-"3) Extract preferences (language, cuisine, part_of_meal, part_of_day, heavy_or_light, time_minutes, "
-"difficulty, budget, available_ingredients, servings, allergens, goals, free_text).\n"
-"4) Use vector_search to get top 3 matches; if sparse, still search and prefer healthy, practical options. "
-"Fallback to keyword_search if needed.\n"
-"5) Present results with links and images (YouTube thumbnails if available). Ask if they want alternatives.\n"
-"6) Provide tips (efficiency, health, prices). Offer step-by-step sourcing/help.\n"
-"7) Ask for feedback; if provided, call add_feedback.\n"
-"8) If asked, call create_cookbook with selected recipes.\n"
-"Keep answers concise, friendly, and actionable."
-))
+# SYSTEM = SystemMessage(content=(
+# "You are a cheerful kitchen buddy and nutrition coach.\n"
+# "Voice & style:\n"
+# "- Sound human, warm, and encouraging. Use contractions and 1–2 friendly emojis max (e.g., 🍳🥗), never every line.\n"
+# "- Prefer short sentences and compact bullets. Avoid big headings/tables unless the user asks.\n"
+# "- Keep it actionable: 2–3 specific suggestions, each with 2–4 quick steps.\n"
+# "- Weave links inline with the title; don’t dump raw URLs or long source blocks.\n"
+# "- If results look generic (category pages with no real ingredients/steps), skip them.\n"
+# "\nWorkflow:\n"
+# "1) If input has media, call transcribe_media first.\n"
+# "2) Translate to English for search; reply in 'reply_language'.\n"
+# "3) Extract preferences JSON.\n"
+# "4) Call vector_search first (pass time_limit, cuisine, must_include, exclude_ingredients, avoid_allergens from vector_search_plan). Fallback to keyword_search if needed.\n"
+# "5) For each selected result, output a friendly mini-card:\n"
+# "   • Title (linked) — 1-line why it fits (time, diet, cravings).\n"
+# "   • Key ingredients (≤6).\n"
+# "   • 2–4 quick steps (imperative, one line each).\n"
+# "   • Optional: tiny tip/substitution.\n"
+# "6) Close with one casual question or offer (e.g., 'Want more like this or a quick shopping list?').\n"
+# "7) If the user asks for calories/macros/nutrition (e.g., ‘how many calories?’, ‘calorie count of X’), call estimate_nutrition with the ingredients of the most relevant recipe (use recent results if available). Always answer in reply_language.\n"
+# "8) If the user asks for a shopping/grocery list and recipes were just shown, call make_shopping_list (recipes may be omitted; use cached hits). Write the list in reply_language.\n"
+# "9) If asked, call create_cookbook with selected recipe_ids.\n"
+# "10) When replying in a non-English language, prefer ingredients_display if present; otherwise use ingredients.\n"
+# "11) If the user asks to translate text, call translate_text with raw_user_text (or the recipe text shown) and the requested language, then reply with ONLY that translated text.\n"
+# "12) Always reply in reply_language. If no strong recipe matches, still give 2–3 helpful ideas or substitutions in that same language; do not switch languages or apologize.\n"
+# "Keep it concise, friendly, and helpful."
+# "Examples (behavioral):\n"
+# "- If the user says: "in Spanish" and there is a previous answer, translate your previous answer into Spanish and continue in Spanish next turns.\n"
+# "- If the user asks: "calorie count of ceviche", estimate nutrition from a sensible ingredient list and answer in reply_language, e.g. in Spanish:\n"
+#   "Aproximado por porción: ~180 kcal (proteína 20–25 g, carbs 6–10 g, grasa 4–6 g). ¿Ajusto porciones o ingredientes?\n"
+# " -If the user asks: "translate ceviche recipe in kapampangan", translate the ceviche recipe into Kapampangan and reply with ONLY that translated text.\n"
 
+# ))
+
+SYSTEM = SystemMessage(content="""You are a cheerful kitchen buddy and nutrition coach.
+
+Voice & style
+- Sound human, warm, and encouraging. Use contractions and at most 1–2 emojis total (🍳🥗), not every line.
+- Prefer short sentences and compact bullets. Avoid big headings/tables unless asked.
+- Keep it actionable: give 2–3 concrete suggestions, each with 2–4 quick steps.
+- Weave links inline with the title; don’t dump raw URLs or long source blocks.
+- If results look generic (category pages with no real ingredients/steps), skip them.
+
+Language rules
+- Always reply in reply_language. Detect media/text language for search, but never change reply_language on your own.
+- When replying in a non-English language, prefer ingredients_display if present; otherwise use ingredients.
+- If the user says “in <language>” or “translate … to <language>”, translate the relevant text and continue in that language next turns. If they provide only a language (no text), translate the previous assistant message.
+
+Workflow
+1) If input has media, call transcribe_media first.
+2) Translate the user request (and any transcript) to English for retrieval; keep reply_language for the final answer.
+3) Extract preferences as JSON with keys:
+   language, cuisine, part_of_meal, part_of_day, heavy_or_light, time_minutes, difficulty,
+   budget, available_ingredients, servings, allergens, goals, include_ingredients, exclude_ingredients, free_text.
+4) If seed_recipe_id is provided, prioritize that recipe; you may summarize it directly without calling transcription.                      
+5) Call vector_search first using vector_search_plan (time_limit, cuisine, must_include, exclude_ingredients, avoid_allergens, display_lang). Fallback to keyword_search if needed.
+6) If request info is sparse, still suggest 2–3 practical, healthy recipes using common/easy-to-source ingredients in reply_language (no apologies).
+7) For each selected result, output a friendly mini-card:
+   • [Title](link) — 1-line why it fits (time, diet, cravings).  
+   • Key ingredients (≤6).  
+   • 2–4 quick steps (imperative, one line each).  
+   • Optional: tiny tip/substitution.  
+   Include image/thumbnail if available.
+8) Close with one casual offer/question (e.g., “Want more like this or a quick shopping list?”).
+
+Tools & follow-ups
+- Calories/macros: if the user asks (e.g., “how many calories?”, “calorie count of X”), call estimate_nutrition with the ingredients of the most relevant recipe (use recent results if available). Answer in reply_language with compact numbers per serving.
+- Shopping list: if the user asks for a shopping/grocery list and recipes were just shown, call make_shopping_list (recipes may be omitted; use cached hits). Respond in reply_language.
+- Cookbook: if asked, call create_cookbook with selected recipe_ids.
+- Feedback: if the user gives feedback on a recipe, call add_feedback.
+- Translation: if the user asks to translate text, call translate_text with raw_user_text (or the shown recipe text) and reply with ONLY the translated text.
+- If you mention nearby stores or restaurants, first ask for their location or use an appropriate lookup tool if available.
+
+Behavioral examples
+- “in Spanish” (with a previous answer): translate your previous answer into Spanish and keep Spanish for future turns.
+- “calorie count of ceviche”: estimate from a sensible ingredient list and answer in reply_language; e.g., in Spanish: “Aproximado por porción: ~180 kcal (proteína 20–25 g, carbs 6–10 g, grasa 4–6 g). ¿Ajusto porciones o ingredientes?”
+- “translate ceviche recipe in kapampangan”: translate that recipe into Kapampangan and reply with ONLY the translated text.
+
+Keep it concise, friendly, and helpful.
+""")
 
 def build_agent():
-    tools = [tool_vector_search, tool_keyword_search, tool_transcribe_media, tool_add_feedback, tool_create_cookbook]
+    tools = [
+        tool_vector_search,
+        tool_keyword_search,
+        tool_transcribe_media,
+        tool_add_feedback,
+        tool_create_cookbook,
+        tool_estimate_nutrition,
+        tool_make_shopping_list,
+        tool_translate_text,
+    ]
     return initialize_agent(
         tools=tools,
-        llm=ChatOpenAI(model=LLM_MODEL, temperature=0),
+        llm=ChatOpenAI(model=LLM_MODEL, temperature=CHEF_TEMP),
         agent=AgentType.OPENAI_FUNCTIONS,
         verbose=False,
         handle_parsing_errors=True,
@@ -613,6 +962,14 @@ def build_agent():
 # Chat orchestration
 # =========================
 URL_RE = re.compile(r"(https?://\S+)", re.I)
+
+def get_doc_by_youtube_id(vid: str):
+    prefix = f"yt:{vid}"
+    for d in DOCS:
+        if d.id == prefix:
+            return d
+    return None
+
 
 def detect_language(text: str) -> str:
     try:
@@ -641,39 +998,500 @@ def maybe_media_url(text: str) -> Optional[str]:
 
 from typing import Optional  # (you already have this at the top)
 
-def chat_once(agent, user_text: str, session_reply_lang: Optional[str] = None) -> str:
-    # 1) If there's media, transcribe to enrich SEARCH (not language choice)
+def extract_translation_intent(text: str):
+    """Return {'lang': 'pam', 'text': '...'} or None. Uses LANG_ALIASES."""
+    if not text:
+        return None
+    t = text.strip()
+
+    # e.g., "translate ceviche recipe in kapampangan" / "... to kapampangan"
+    m = re.search(r'^\s*translate\s+(.+?)\s+(?:to|into|in)\s+([a-zA-Z\- ]+)\s*$', t, flags=re.I)
+    if m:
+        raw = m.group(1).strip()
+        lang_name = re.sub(r'\s+', ' ', m.group(2).strip().lower())
+        return {"lang": LANG_ALIASES.get(lang_name), "text": raw}
+
+    # e.g., "Homemade Tocino in Kapampangan"
+    m2 = re.search(r'^(.*\S)\s+in\s+([a-zA-Z\- ]+)\s*$', t, flags=re.I)
+    if m2:
+        raw = m2.group(1).strip()
+        lang_name = re.sub(r'\s+', ' ', m2.group(2).strip().lower())
+        return {"lang": LANG_ALIASES.get(lang_name), "text": raw}
+
+    # e.g., "translate to kapampangan" (no source text)
+    m3 = re.search(r'^\s*translate(?:\s+(?:to|into))?\s+([a-zA-Z\- ]+)\s*$', t, flags=re.I)
+    if m3:
+        lang_name = re.sub(r'\s+', ' ', m3.group(1).strip().lower())
+        return {"lang": LANG_ALIASES.get(lang_name), "text": None}
+
+    return None
+
+def ensure_reply_language(text: str, target_lang: Optional[str]) -> str:
+    """Return text in target_lang. If it's not already, translate while preserving bullets/format."""
+    if not text or not target_lang:
+        return text or ""
+    try:
+        cands = detect_langs(text)
+        if cands and cands[0].lang == target_lang and cands[0].prob >= 0.5:
+            return text
+    except Exception:
+        pass
+    prompt = ChatPromptTemplate.from_messages([
+        ("system", "Translate into the target language. Preserve line breaks, bullets, numbers, and formatting. "
+                   "Use natural culinary terms. Return ONLY the translated text."),
+        ("human", "Target language: {lang}\n\nText:\n{txt}")
+    ])
+    out = (prompt | llm_zero()).invoke({"lang": target_lang, "txt": text})
+    return out.content.strip()
+
+CALORIE_TRIGGERS = r"(?:calorie|calories|kcal|nutrition|nutritional|macros?|protein|carbs?|fat|kilocal)"
+def extract_nutrition_intent(text: str):
+    """Return {'query': 'ceviche' or None} if the user is asking for calories/macros."""
+    if not text: return None
+    t = text.strip().lower()
+    if not re.search(CALORIE_TRIGGERS, t): 
+        return None
+    # Try to pull a dish name from patterns like "calorie count of X", "how many calories in X"
+    m = re.search(rf"(?:of|for|in)\s+(.+)$", t)
+    dish = (m.group(1).strip(" .?!")) if m else None
+    # If the whole message is just "how many calories?" there's no dish
+    return {"query": dish}
+
+def locale_from_lang(lang: str) -> str:
+    # EU vs US affects some naming; keep simple for now
+    return "EU" if (lang or "en").lower() not in {"en-us","arz"} else "US"
+
+def get_ingredients_for_query(q: str, k: int = 1) -> List[str]:
+    """Use the in-memory vector store to get ingredients for a query."""
+    global VS
+    if not VS or not q: 
+        return []
+    try:
+        docs_scores = VS.similarity_search_with_score(q, k=k)
+    except Exception:
+        return []
+    for doc, _ in docs_scores:
+        m = doc.metadata
+        ings = _as_list(m.get("ingredients_json") or m.get("ingredients") or m.get("ingredients_text"))
+        if ings: 
+            return ings
+    return []
+
+def build_recipe_text_from_query(q: str) -> Optional[str]:
+    """Return a compact English recipe text (title + ingredients + steps) for q.
+    Try vector store first; fallback to an LLM-generated outline."""
+    if not q:
+        return None
+
+    # Try vector store (best-effort)
+    try:
+        global VS
+        if VS:
+            docs_scores = VS.similarity_search_with_score(q, k=1)
+            for doc, _ in docs_scores:
+                m = doc.metadata
+                title = m.get("title") or q.title()
+                ings  = _as_list(m.get("ingredients_json") or m.get("ingredients") or m.get("ingredients_text"))
+                steps = _as_list(m.get("steps_json") or m.get("steps"))
+                if ings or steps:
+                    parts = [f"{title}", ""]
+                    if ings:
+                        parts.append("Ingredients:")
+                        parts += [f"- {i}" for i in ings[:15]]
+                        parts.append("")
+                    if steps:
+                        parts.append("Steps:")
+                        parts += [f"{i+1}. {s}" for i, s in enumerate(steps[:8])]
+                    return "\n".join(parts).strip()
+    except Exception:
+        pass
+
+    # Fallback: ask the LLM for a concise recipe skeleton in English
+    prompt = ChatPromptTemplate.from_messages([
+        ("system", "Write a concise, standard recipe in English for the dish. Keep it practical, 6–12 ingredients and 4–6 short steps. Return ONLY text."),
+        ("human", "Dish: {q}")
+    ])
+    out = (prompt | llm_zero()).invoke({"q": q})
+    return out.content.strip() if out and out.content else None
+
+def draft_ingredients_with_llm(dish: str) -> List[str]:
+    if not dish:
+        return []
+    prompt = ChatPromptTemplate.from_messages([
+        ("system", "List core ingredients for the dish, 1–2 servings. One item per line. No steps, no chit-chat."),
+        ("human", "Dish: {dish}\n\nReturn just the list.")
+    ])
+    out = (prompt | llm_zero()).invoke({"dish": dish})
+    return [ln.strip("-• ").strip() for ln in out.content.splitlines() if ln.strip()]
+
+
+# def chat_once(agent, user_text: str, session_reply_lang: Optional[str] = None, last_bot_text: str = "") -> str:
+#     t = (user_text or "").strip()
+
+#     # ---------- EARLY: TRANSLATION SHORT-CIRCUIT ----------
+#     m  = re.search(r'^\s*translate\s+(.+?)\s+(?:to|into|in)\s+([a-zA-Z\- ]+)\s*$', t, flags=re.I)
+#     m2 = re.search(r'^\s*translate(?:\s+(?:to|into))?\s+([a-zA-Z\- ]+)\s*$', t, flags=re.I)  # no text => use last_bot_text
+#     m3 = re.search(r'^(.*\S)\s+in\s+([a-zA-Z\- ]+)\s*$', t, flags=re.I)
+#     m4 = re.search(r'^\s*(?:in|en)\s+([a-zA-Z\- ]+)\s*$', t, flags=re.I)
+
+#     target_lang, payload = None, None
+#     if m:
+#         payload = m.group(1).strip()
+#         lang_name = re.sub(r'\s+', ' ', m.group(2).strip().lower())
+#         target_lang = LANG_ALIASES.get(lang_name) or LANG_ALIASES.get(lang_name.lower())
+#     elif m2:
+#         payload = last_bot_text
+#         lang_name = re.sub(r'\s+', ' ', m2.group(1).strip().lower())
+#         target_lang = LANG_ALIASES.get(lang_name) or LANG_ALIASES.get(lang_name.lower())
+#     elif m3:
+#         payload = m3.group(1).strip()
+#         lang_name = re.sub(r'\s+', ' ', m3.group(2).strip().lower())
+#         target_lang = LANG_ALIASES.get(lang_name) or LANG_ALIASES.get(lang_name.lower())
+#     elif m4:
+#         payload = last_bot_text         # <— translate the previous answer
+#         lang_name = re.sub(r'\s+', ' ', m4.group(1).strip().lower())
+#         target_lang = LANG_ALIASES.get(lang_name) or LANG_ALIASES.get(lang_name.lower())
+
+#     if target_lang:
+#         if not payload:
+#             return "Paste the text you want me to translate. 🙂"
+#         try:
+#             translated = tool_translate_text.invoke({"text": payload, "target_lang": target_lang})
+#             return (translated.get("content") if isinstance(translated, dict) and "content" in translated else str(translated)).strip()
+#         except Exception:
+#             prompt = ChatPromptTemplate.from_messages([
+#                 ("system", "You are a careful translator. Translate into the target language. Preserve bullets, numbers, and line breaks. Use natural culinary terms. Return ONLY the translated text."),
+#                 ("human", "Target language: {lang}\n\nText:\n{txt}")
+#             ])
+#             out = (prompt | llm_zero()).invoke({"lang": target_lang, "txt": payload})
+#             return out.content.strip()
+
+#     # ---------- MEDIA TRANSCRIPT (optional) ----------
+#     media = maybe_media_url(user_text)
+#     transcript = None
+#     if media:
+#         try:
+#             transcript = transcribe_media(media)
+#         except Exception:
+#             transcript = None
+
+#     # ---------- REPLY LANGUAGE ----------
+#     user_lang_guess = detect_language(user_text)
+#     if (not user_lang_guess or user_lang_guess == "unknown") and len(user_text) < 20 and user_text.isascii():
+#         user_lang_guess = "en"
+#     reply_lang = (FORCE_REPLY_LANG or session_reply_lang or user_lang_guess or "en")
+
+#     # ---------- EARLY: CALORIES / MACROS SHORT-CIRCUIT ----------
+#     if re.search(r"(?:calorie|calories|kcal|nutrition|nutritional|macros?|protein|carbs?|fat|kilocal)", t, flags=re.I):
+#         # helpers to gather ingredients quickly
+#         def _ingredients_from_hits():
+#             try:
+#                 hit = (LAST_HITS or [])[0]
+#                 return (hit.get("ingredients") or hit.get("ingredients_display") or []) if hit else []
+#             except Exception:
+#                 return []
+
+#         def _ingredients_from_query(q: str):
+#             global VS
+#             if not VS or not q:
+#                 return []
+#             try:
+#                 docs_scores = VS.similarity_search_with_score(q, k=1)
+#                 for doc, _d in docs_scores:
+#                     m = doc.metadata
+#                     return _as_list(m.get("ingredients_json") or m.get("ingredients") or m.get("ingredients_text")) or []
+#             except Exception:
+#                 return []
+#             return []
+
+#         def _ingredients_from_text(txt: str):
+#             if not txt:
+#                 return []
+#             # grab bullet lines as a rough list
+#             rough = re.findall(r"(?m)^\s*[-•]\s*(.+)$", txt)
+#             return rough[:12]
+
+#         ings = _ingredients_from_hits()
+#         if not ings:
+#             # try "calories of X" / "how many calories in X"
+#             m_dish = re.search(r"(?:of|for|in)\s+(.+)$", t)
+#             dish = (m_dish.group(1).strip(" .?!")) if m_dish else None
+#             ings = _ingredients_from_query(dish) if dish else ings
+#         if not ings and last_bot_text:
+#             ings = _ingredients_from_text(last_bot_text)
+
+#         if not ings:
+#             # last-ditch: pull a dish name and draft ingredients
+#             dish_guess = re.sub(r"^(how many|how much|what.*?)(calories?|kcal|nutrition|macros?).*?(of|for|in)?\s*", "", t, flags=re.I).strip(" .?!")
+#             ings = draft_ingredients_with_llm(dish_guess or "classic ceviche")
+
+#         if not ings:
+#             return ensure_reply_language("Tell me which recipe you want the calorie estimate for (or paste ingredients). 🙂", reply_lang)
+
+
+#         # pick locale (simple heuristic)
+#         loc = "US" if reply_lang.lower() in {"en", "en-us", "arz"} else "EU"
+#         try:
+#             out = tool_estimate_nutrition.invoke({"ingredients": ings, "servings": 1, "locale": loc})
+#             txt = str(out).strip()
+#             answer = f"Here’s a rough estimate **per serving**:\n{txt}\n\nWant me to adjust servings or ingredients?"
+#             return ensure_reply_language(answer, reply_lang)
+#         except Exception:
+#             return ensure_reply_language("I couldn't estimate right now. Share the ingredient list and servings, and I’ll calculate it.", reply_lang)
+
+#     # ---------- TRANSLATE TO EN FOR SEARCH ----------
+#     text_for_search = (transcript + "\n\n" + user_text) if transcript else user_text
+#     text_en = translate_to_english(text_for_search)
+
+#     # ---------- EARLY: SHOPPING LIST SHORT-CIRCUIT ----------
+#     if re.search(r"\b(shopping|grocery)\s+list\b", user_text, flags=re.I):
+#         try:
+#             out = tool_make_shopping_list.invoke({
+#                 "recipes": None,                 # falls back to LAST_HITS inside the tool
+#                 "servings_multiplier": 1.0,
+#                 "target_lang": reply_lang
+#             })
+#             return ensure_reply_language(str(out), reply_lang)
+#         except Exception:
+#             if not LAST_HITS:
+#                 return ensure_reply_language("Tell me which recipes you want in the shopping list. 🙂", reply_lang)
+
+#     # ---------- NO-INDEX QUICK FALLBACK ----------
+#     if VS is None or not DOCS:
+#         quick = ChatPromptTemplate.from_messages([
+#             ("system", "You are a warm kitchen buddy. Write 3 snack/meal ideas that fit the user's vibe. Keep each idea to 1–2 lines with 2–3 quick steps. Use the target language."),
+#             ("human", "Target language: {lang}\nUser request (English): {req}")
+#         ])
+#         out = (quick | llm_zero()).invoke({"lang": reply_lang, "req": text_en})
+#         return ensure_reply_language(out.content.strip(), reply_lang)
+
+#     # ---------- PREFERENCES + SEARCH PLAN ----------
+#     prefs = extract_prefs(text_en)
+#     prefs.language = reply_lang
+#     include = [x.strip() for x in (prefs.include_ingredients or []) if x and x.strip()]
+#     exclude = [x.strip() for x in (prefs.exclude_ingredients or []) if x and x.strip()]
+#     avoid   = [x.strip() for x in (prefs.allergens or []) if x and x.strip()]
+#     search_plan = {
+#         "time_limit": prefs.time_minutes,
+#         "cuisine": prefs.cuisine,
+#         "must_include": include,
+#         "exclude_ingredients": exclude,
+#         "avoid_allergens": avoid,
+#         "display_lang": reply_lang,
+#     }
+
+#     # ---------- AGENT CALL ----------
+#     directive = {
+#         "translated_text_en": text_en,
+#         "raw_user_text": user_text,
+#         "preferences": prefs.model_dump(),
+#         "media_transcribed": bool(transcript),
+#         "reply_language": reply_lang,
+#         "vector_search_plan": search_plan,
+#     }
+#     result = agent.invoke({"input": f"USER_REQUEST_JSON: {json.dumps(directive, ensure_ascii=False)}"})
+#     answer = result.get("output", str(result)) or ""
+#     return ensure_reply_language(answer, reply_lang)
+
+def chat_once(agent, user_text: str, session_reply_lang: Optional[str] = None, last_bot_text: str = "") -> str:
+    t = (user_text or "").strip()
+
+    # ---------- EARLY: TRANSLATION SHORT-CIRCUIT ----------
+    m  = re.search(r'^\s*translate\s+(.+?)\s+(?:to|into|in)\s+([a-zA-Z\- ]+)\s*$', t, flags=re.I)
+    m2 = re.search(r'^\s*translate(?:\s+(?:to|into))?\s+([a-zA-Z\- ]+)\s*$', t, flags=re.I)  # no text => use last_bot_text
+    m3 = re.search(r'^(.*\S)\s+in\s+([a-zA-Z\- ]+)\s*$', t, flags=re.I)
+    m4 = re.search(r'^\s*(?:in|en)\s+([a-zA-Z\- ]+)\s*$', t, flags=re.I)  # "in Spanish" / "en español"
+    target_lang, payload = None, None
+
+    if m:
+        payload = m.group(1).strip()
+        lang_name = re.sub(r'\s+', ' ', m.group(2).strip().lower())
+        target_lang = LANG_ALIASES.get(lang_name) or LANG_ALIASES.get(lang_name.lower())
+    elif m2:
+        payload = last_bot_text
+        lang_name = re.sub(r'\s+', ' ', m2.group(1).strip().lower())
+        target_lang = LANG_ALIASES.get(lang_name) or LANG_ALIASES.get(lang_name.lower())
+    elif m3:
+        payload = m3.group(1).strip()
+        lang_name = re.sub(r'\s+', ' ', m3.group(2).strip().lower())
+        target_lang = LANG_ALIASES.get(lang_name) or LANG_ALIASES.get(lang_name.lower())
+    elif m4:
+        payload = last_bot_text         # translate the previous answer
+        lang_name = re.sub(r'\s+', ' ', m4.group(1).strip().lower())
+        target_lang = LANG_ALIASES.get(lang_name) or LANG_ALIASES.get(lang_name.lower())
+
+    if target_lang:
+        if not payload:
+            return "Paste the text you want me to translate. 🙂"
+        try:
+            translated = tool_translate_text.invoke({"text": payload, "target_lang": target_lang})
+            return (translated.get("content") if isinstance(translated, dict) and "content" in translated else str(translated)).strip()
+        except Exception:
+            prompt = ChatPromptTemplate.from_messages([
+                ("system", "You are a careful translator. Translate into the target language. Preserve bullets, numbers, and line breaks. Use natural culinary terms. Return ONLY the translated text."),
+                ("human", "Target language: {lang}\n\nText:\n{txt}")
+            ])
+            out = (prompt | llm_zero()).invoke({"lang": target_lang, "txt": payload})
+            return out.content.strip()
+
+    # ---------- MEDIA (YouTube) HINT + NON-BLOCKING TRANSCRIPT ----------
     media = maybe_media_url(user_text)
-    transcript = None
+    transcript, seed_recipe_id, video_id = None, None, None
     if media:
         try:
-            transcript = transcribe_media(media)
+            video_id = _extract_video_id(media)
         except Exception:
-            transcript = None
+            video_id = None
+        # Prefer your scraped doc over slow transcription
+        try:
+            def _get_doc_by_youtube_id(vid: Optional[str]):
+                if not vid: return None
+                pref = f"yt:{vid}"
+                for d in DOCS:
+                    if getattr(d, "id", "") == pref:
+                        return d
+                return None
+            seed_doc = _get_doc_by_youtube_id(video_id)
+            if seed_doc:
+                seed_recipe_id = seed_doc.id
+            else:
+                # Only transcribe if you OPT IN (avoid long hangs)
+                if os.getenv("CHEF_TRANSCRIBE", "api_only").lower() != "api_only":
+                    try:
+                        transcript = transcribe_media(media)  # keep your existing signature
+                    except Exception:
+                        transcript = None
+        except Exception:
+            pass
 
-    # 2) Choose reply language (env override -> session -> detection)
+    # ---------- REPLY LANGUAGE ----------
     user_lang_guess = detect_language(user_text)
     if (not user_lang_guess or user_lang_guess == "unknown") and len(user_text) < 20 and user_text.isascii():
         user_lang_guess = "en"
     reply_lang = (FORCE_REPLY_LANG or session_reply_lang or user_lang_guess or "en")
 
-    # 3) Translate FOR SEARCH (ok to include transcript)
+    # ---------- EARLY: CALORIES / MACROS SHORT-CIRCUIT ----------
+    if re.search(r"(?:calorie|calories|kcal|nutrition|nutritional|macros?|protein|carbs?|fat|kilocal)", t, flags=re.I):
+        # Helpers to gather/derive an ingredient list
+        def _ingredients_from_hits():
+            try:
+                hit = (LAST_HITS or [])[0]
+                return (hit.get("ingredients") or hit.get("ingredients_display") or []) if hit else []
+            except Exception:
+                return []
+
+        def _ingredients_from_query(q: str):
+            global VS
+            if not VS or not q:
+                return []
+            try:
+                docs_scores = VS.similarity_search_with_score(q, k=1)
+                for doc, _d in docs_scores:
+                    m = doc.metadata
+                    return _as_list(m.get("ingredients_json") or m.get("ingredients") or m.get("ingredients_text")) or []
+            except Exception:
+                return []
+            return []
+
+        def _ingredients_from_text(txt: str):
+            if not txt:
+                return []
+            rough = re.findall(r"(?m)^\s*[-•]\s*(.+)$", txt)
+            return rough[:12]
+
+        def _draft_ingredients_llm(dish: Optional[str]) -> List[str]:
+            dish = (dish or "").strip()
+            if not dish:
+                return []
+            prompt = ChatPromptTemplate.from_messages([
+                ("system", "List 6–12 typical ingredients for the dish. Newline-separated. No quantities."),
+                ("human", "{dish}")
+            ])
+            out = (prompt | llm_zero()).invoke({"dish": dish})
+            lines = [s.strip(" -•\t") for s in out.content.splitlines() if s.strip()]
+            return lines[:12]
+
+        ings = _ingredients_from_hits()
+        if not ings:
+            m_dish = re.search(r"(?:of|for|in)\s+(.+)$", t)
+            dish = (m_dish.group(1).strip(" .?!")) if m_dish else None
+            ings = _ingredients_from_query(dish) if dish else ings
+        if not ings and last_bot_text:
+            ings = _ingredients_from_text(last_bot_text)
+        if not ings:
+            # last-ditch: draft plausible ingredients from the dish name
+            dish_guess = re.sub(r"^(how many|how much|what.*?)(calories?|kcal|nutrition|macros?).*?(of|for|in)?\s*", "", t, flags=re.I).strip(" .?!")
+            ings = _draft_ingredients_llm(dish_guess or "classic ceviche")
+
+        if not ings:
+            return ensure_reply_language("Tell me which recipe you want the calorie estimate for (or paste ingredients). 🙂", reply_lang)
+
+        loc = "US" if reply_lang.lower() in {"en", "en-us", "arz"} else "EU"
+        try:
+            out = tool_estimate_nutrition.invoke({"ingredients": ings, "servings": 1, "locale": loc})
+            txt = str(out).strip()
+            answer = f"Here’s a rough estimate **per serving**:\n{txt}\n\nWant me to adjust servings or ingredients?"
+            return ensure_reply_language(answer, reply_lang)
+        except Exception:
+            return ensure_reply_language("I couldn't estimate right now. Share the ingredient list and servings, and I’ll calculate it.", reply_lang)
+
+    # ---------- TRANSLATE TO EN FOR SEARCH ----------
     text_for_search = (transcript + "\n\n" + user_text) if transcript else user_text
     text_en = translate_to_english(text_for_search)
 
-    # 4) Extract prefs; keep tools informed of reply language
+    # ---------- EARLY: SHOPPING LIST SHORT-CIRCUIT ----------
+    if re.search(r"\b(shopping|grocery)\s+list\b", user_text, flags=re.I):
+        try:
+            out = tool_make_shopping_list.invoke({
+                "recipes": None,                 # falls back to LAST_HITS inside the tool
+                "servings_multiplier": 1.0,
+                "target_lang": reply_lang
+            })
+            return ensure_reply_language(str(out), reply_lang)
+        except Exception:
+            if not LAST_HITS:
+                return ensure_reply_language("Tell me which recipes you want in the shopping list. 🙂", reply_lang)
+
+    # ---------- NO-INDEX QUICK FALLBACK ----------
+    if VS is None or not DOCS:
+        quick = ChatPromptTemplate.from_messages([
+            ("system", "You are a warm kitchen buddy. Write 3 snack/meal ideas that fit the user's vibe. Keep each idea to 1–2 lines with 2–3 quick steps. Use the target language."),
+            ("human", "Target language: {lang}\nUser request (English): {req}")
+        ])
+        out = (quick | llm_zero()).invoke({"lang": reply_lang, "req": text_en})
+        return ensure_reply_language(out.content.strip(), reply_lang)
+
+    # ---------- PREFERENCES + SEARCH PLAN ----------
     prefs = extract_prefs(text_en)
     prefs.language = reply_lang
+    include = [x.strip() for x in (prefs.include_ingredients or []) if x and x.strip()]
+    exclude = [x.strip() for x in (prefs.exclude_ingredients or []) if x and x.strip()]
+    avoid   = [x.strip() for x in (prefs.allergens or []) if x and x.strip()]
+    search_plan = {
+        "time_limit": prefs.time_minutes,
+        "cuisine": prefs.cuisine,
+        "must_include": include,
+        "exclude_ingredients": exclude,
+        "avoid_allergens": avoid,
+        "display_lang": reply_lang,
+    }
 
-    # 5) Agent call
+    # ---------- AGENT CALL ----------
     directive = {
         "translated_text_en": text_en,
+        "raw_user_text": user_text,
         "preferences": prefs.model_dump(),
         "media_transcribed": bool(transcript),
         "reply_language": reply_lang,
+        "vector_search_plan": search_plan,
+        # Hints so the agent can prioritize without transcribing
+        "media_url": media,
+        "video_id": video_id,
+        "seed_recipe_id": seed_recipe_id,
     }
     result = agent.invoke({"input": f"USER_REQUEST_JSON: {json.dumps(directive, ensure_ascii=False)}"})
-    return result.get("output", str(result))
+    answer = result.get("output", str(result)) or ""
+    return ensure_reply_language(answer, reply_lang)
 
 
 # =========================
@@ -719,6 +1537,8 @@ def main():
     print("Vector store ready.")
 
     agent = build_agent()
+    last_bot_text = ""
+
     global SESSION_REPLY_LANG
     print("\nKusina Bot ready. I am your kitchen assistant. How can I help you? Ctrl+C to exit.\n")
     while True:
@@ -732,8 +1552,12 @@ def main():
             if maybe_lang:
                 SESSION_REPLY_LANG = maybe_lang
                 pretty = "Tagalog" if maybe_lang == "tl" else maybe_lang
-                print(f"\nAssistant:\nOkay! I’ll reply in {pretty} from now on.\n")
-                continue  # if the user only sent the switch command
+                # If we have something to translate, show it immediately in the new language
+                if last_bot_text.strip():
+                    print("\nAssistant:\n" + ensure_reply_language(last_bot_text, maybe_lang) + "\n")
+                else:
+                    print(f"\nAssistant:\nOkay! I’ll reply in {pretty} from now on.\n")
+                continue
 
             # 2) Ephemeral auto-switch for THIS TURN if confident + long message
             ephemeral_lang = SESSION_REPLY_LANG
@@ -743,8 +1567,11 @@ def main():
                 # (Optional) let them know how to lock it
                 # print(f"[note] Detected {det}; replying in that language for this turn. Use '/lang {det}' to switch permanently.")
 
-            answer = chat_once(agent, user, session_reply_lang=ephemeral_lang)
+            answer = chat_once(agent, user, session_reply_lang=ephemeral_lang, last_bot_text=last_bot_text)
+
             print("\nAssistant:\n" + answer + "\n")
+            last_bot_text = answer
+
         except KeyboardInterrupt:
             print("\nBye!")
             break
