@@ -351,7 +351,7 @@ def main():
         urls=urls,
         max_videos=args.max,
         whisper_size=args.whisper_size,
-        llm_model=args.llm_model,
+        llm_model=args.llm_model,01
         prefer_api=args.prefer_api,
         out_dir=out_dir,
         skip_existing=args.skip_existing,
