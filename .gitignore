@@ -6,3 +6,12 @@ __pycache__/
 
 # VSCode
 .vscode/
+# build/reproducible artifacts — DO NOT COMMIT
+src/backend/scrapers/data/recipes/audio/
+data/tmp_audio/
+src/backend/scrapers/data/vs/
+exports/
+*.wav
+*.bin
+*.faiss
+*.sqlite
