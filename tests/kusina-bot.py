@@ -62,6 +62,109 @@ from rapidfuzz import process, fuzz
 from langdetect import DetectorFactory, detect_langs
 DetectorFactory.seed = 0
 
+# ---------- voice I/O ----------
+import time, tempfile
+import sounddevice as sd
+import soundfile as sf
+import pyttsx3
+
+VOICE_ENABLED = False
+TTS_ENGINE = None
+
+def init_tts(prefer_lang: str | None = None, rate: int | None = None):
+    """Init (or reuse) a TTS engine, try to pick a voice that matches prefer_lang if available."""
+    global TTS_ENGINE
+    if TTS_ENGINE is not None:
+        return TTS_ENGINE
+    eng = pyttsx3.init()
+    if rate:
+        eng.setProperty("rate", rate)
+    if prefer_lang:
+        # best-effort: pick a voice whose language tag contains prefer_lang (e.g., 'en', 'es', 'tl')
+        try:
+            want = prefer_lang.lower()
+            for v in eng.getProperty("voices"):
+                # voices[i].languages can be bytes like b'\x05en_US' or a list
+                langs = getattr(v, "languages", []) or []
+                tags = []
+                for L in langs:
+                    try:
+                        tags.append(L.decode("utf-8", "ignore"))
+                    except Exception:
+                        tags.append(str(L))
+                blob = " ".join([v.id, v.name or "", " ".join(tags)]).lower()
+                if want in blob:
+                    eng.setProperty("voice", v.id)
+                    break
+        except Exception:
+            pass
+    TTS_ENGINE = eng
+    return TTS_ENGINE
+
+def tts_say(text: str, lang: str | None = None):
+    """Speak the given text (already in reply language)."""
+    eng = init_tts(prefer_lang=lang)
+    try:
+        eng.say(text)
+        eng.runAndWait()
+    except Exception:
+        pass  # don't crash if audio device is busy
+
+def record_wav(seconds: int = 6,
+               samplerate: int | None = None,
+               channels: int = 1,
+               device_index: int | None = None) -> Path:
+    import numpy as np, time, tempfile
+    import sounddevice as sd, soundfile as sf
+    if samplerate is None:
+        try:
+            dinfo = sd.query_devices(device_index if device_index is not None else sd.default.device[0])
+            samplerate = int(dinfo.get("default_samplerate") or 16000)
+        except Exception:
+            samplerate = 16000
+
+    n = int(seconds * samplerate)
+    audio = sd.rec(n, samplerate=samplerate, channels=channels, dtype="int16",
+                   device=device_index)  # <-- use device_index here
+    sd.wait()
+
+    # simple level diagnostics
+    rms = float(np.sqrt((audio.astype(np.float32)**2).mean()))
+    peak = float(np.max(np.abs(audio))) / 32768.0
+    print(f"[voice] recorded {seconds}s @ {samplerate}Hz, rms={rms:.4f}, peak={peak:.4f}, device={device_index}")
+
+    tmp = Path(tempfile.gettempdir()) / f"kusina_mic_{int(time.time())}.wav"
+    sf.write(str(tmp), audio, samplerate)
+    print(f"[voice] saved WAV -> {tmp}")
+    return tmp
+
+
+def stt_from_mic(max_seconds: int = 6,
+                 lang_hint: str | None = None,
+                 samplerate: int | None = None,
+                 device_index: int | None = None) -> str:
+    p = record_wav(seconds=max_seconds, samplerate=samplerate, device_index=device_index)
+    try:
+        # pick model
+        name = os.getenv("CHEF_WHISPER_MODEL", "small")
+        m = _whisper_model(name)
+        opts = {
+            "fp16": False,
+            "task": "transcribe",
+        }
+        if lang_hint:
+            opts["language"] = lang_hint
+            # tiny domain bias (helps a bit)
+            opts["initial_prompt"] = "kitchen, cooking, recipe, ingredients, teaspoon, tablespoon, garlic, onion, chicken, rice, soy sauce"
+        out = m.transcribe(str(p), **opts)
+        text = (out.get("text") or "").strip()
+        if not text:
+            print("[voice] whisper returned empty text")
+        return text
+    except Exception:
+        print("[voice] whisper failed")
+        return ""
+
 # ---------- media transcription ----------
 from youtube_transcript_api import YouTubeTranscriptApi, TranscriptsDisabled, NoTranscriptFound
 from yt_dlp import YoutubeDL
@@ -499,13 +602,16 @@ def _transcript_via_api(vid: str) -> Optional[str]:
     except Exception:
         return None
 
-_WHISPER = None
-def _whisper_model(size: str = "base"):
-    global _WHISPER
-    if _WHISPER is None:
-        import whisper  # lazy import
-        _WHISPER = whisper.load_model(size)
-    return _WHISPER
+WHISPER_MODEL = os.getenv("CHEF_WHISPER_MODEL", "base")
+_WHISPER = {}
+def _whisper_model(size: str | None = None):
+    import os
+    size = size or os.getenv("CHEF_WHISPER_MODEL", "small")
+    if size not in _WHISPER:
+        import whisper
+        print(f"[voice] loading whisper model: {size}")
+        _WHISPER[size] = whisper.load_model(size)
+    return _WHISPER[size]
 
 def _download_audio(url: str) -> Path:
     outdir = Path(DEFAULT_YT_DIR).parent / "tmp_audio"
@@ -1494,8 +1600,54 @@ def main():
     ap.add_argument("--db-dir", type=str, default=DEFAULT_VS_DIR, help="Folder to persist Chroma DB")
     ap.add_argument("--rebuild-vs", action="store_true", help="Force rebuild of Chroma index")
     ap.add_argument("--force-reply-lang", type=str, default=None, help="Force assistant reply language (e.g., en, nl, es).")
+    ap.add_argument("--voice", action="store_true", help="Enable voice input/output (push-to-talk).")
+    ap.add_argument("--mic-index", type=int, default=None, help="Input device index for sounddevice (see voice_sanity.py).")
+    ap.add_argument("--samplerate", type=int, default=16000, help="Microphone sample rate (default 16000).")
+    ap.add_argument("--whisper-model", type=str, default=None, help="Whisper model: tiny | base | small | medium | large | large-v3")
+
+    import sounddevice as sd
+
     args = ap.parse_args()
-    
+    # --- voice device + whisper selection ---
+
+    if args.whisper_model:
+        os.environ["CHEF_WHISPER_MODEL"] = args.whisper_model
+        global _WHISPER
+        _WHISPER = {}  # force reload with the chosen size
+
+
+    user = stt_from_mic(
+        max_seconds=8,
+        lang_hint=SESSION_REPLY_LANG or "en",
+        samplerate=args.samplerate,
+        device_index=args.mic_index
+    )
+
+    try:
+        if args.mic_index is not None:
+            import sounddevice as sd
+            sd.default.device = (args.mic_index, None)   # input device only
+            if args.samplerate:
+                sd.default.samplerate = args.samplerate
+            dinfo = sd.query_devices(args.mic_index)
+            sr = args.samplerate or int(dinfo.get("default_samplerate") or 16000)
+            sd.check_input_settings(device=args.mic_index, channels=1, samplerate=sr)
+            print(f"[voice] using input device {args.mic_index}: {dinfo['name']} @ {sr}Hz")
+        cur_dev = sd.default.device
+        cur_sr = sd.default.samplerate
+        print(f"[voice] mic device={cur_dev} samplerate={cur_sr} whisper={os.getenv('CHEF_WHISPER_MODEL','base')}")
+    except Exception as e:
+        print(f"[voice] Could not set mic device/samplerate: {e}")
+
+    if args.whisper_model:
+        os.environ["CHEF_WHISPER_MODEL"] = args.whisper_model  # used by stt/whisper loader
+
+    if args.voice:
+        MIC_INDEX = 6  # try 6 first; if wrong, try 17 or 22
+        sd.default.device = (MIC_INDEX, None)  # (input, output). None = keep default output.
+        sd.default.samplerate = 16000
+        sd.default.channels = 1
+
     global FORCE_REPLY_LANG
     if args.force_reply_lang:
         FORCE_REPLY_LANG = args.force_reply_lang
@@ -1525,12 +1677,29 @@ def main():
     print("Vector store ready.")
 
     agent = build_agent()
+    if args.voice:
+        init_tts(prefer_lang=SESSION_REPLY_LANG)
+        print("🎙  Voice mode on. Press Enter to talk (or type text instead).")
+
     last_bot_text = ""
 
     print("\nKusina Bot ready. I am your kitchen assistant. How can I help you? Ctrl+C to exit.\n")
     while True:
         try:
-            user = input("You: ").strip()
+            if args.voice:
+                typed = input("You (press Enter to talk, or type): ").strip()
+                if typed:
+                    user = typed
+                else:
+                    print("Listening… (up to 6s)")
+                    user = stt_from_mic(max_seconds=8, lang_hint=SESSION_REPLY_LANG or "en")
+                    if not user:
+                        print("(Didn’t catch that—try again.)")
+                        continue
+                    print(f"You (transcribed): {user}")
+            else:
+                user = input("You: ").strip()
+
             if not user:
                 continue
 
@@ -1539,24 +1708,25 @@ def main():
             if maybe_lang:
                 SESSION_REPLY_LANG = maybe_lang
                 pretty = "Tagalog" if maybe_lang == "tl" else maybe_lang
-                # If we have something to translate, show it immediately in the new language
-                if last_bot_text.strip():
-                    print("\nAssistant:\n" + ensure_reply_language(last_bot_text, maybe_lang) + "\n")
-                else:
-                    print(f"\nAssistant:\nOkay! I’ll reply in {pretty} from now on.\n")
+                msg = ensure_reply_language("Okay! I’ll reply in " + pretty + " from now on.", maybe_lang)
+                print("\nAssistant:\n" + msg + "\n")
+                if args.voice:
+                    tts_say(msg, SESSION_REPLY_LANG)
+                last_bot_text = msg
                 continue
 
-            # 2) Ephemeral auto-switch for THIS TURN if confident + long message
+            # Ephemeral lang detection (unchanged) …
             ephemeral_lang = SESSION_REPLY_LANG
             det = detect_language(user)
             if det in LANG_ALIASES.values() and det != SESSION_REPLY_LANG and len(user) >= 60:
                 ephemeral_lang = det
-                # (Optional) let them know how to lock it
-                # print(f"[note] Detected {det}; replying in that language for this turn. Use '/lang {det}' to switch permanently.")
 
             answer = chat_once(agent, user, session_reply_lang=ephemeral_lang, last_bot_text=last_bot_text)
 
             print("\nAssistant:\n" + answer + "\n")
+            if args.voice:
+                tts_say(answer, SESSION_REPLY_LANG)
+
             last_bot_text = answer
 
         except KeyboardInterrupt:
