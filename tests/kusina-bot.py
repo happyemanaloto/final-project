@@ -13,7 +13,7 @@ Wikibooks (from cookbook_toc_scraper.py)
 
 The bot:
 - Loads both JSONL and per-file JSON (deduplicated) for YT + Wikibooks
-- Builds/loads a FAISS vector store (OpenAI embeddings) for semantic search
+- Builds/loads a Chroma vector store (OpenAI embeddings) for semantic search
 - Exposes tools (vector_search, keyword_search, transcribe_media, add_feedback, create_cookbook)
 - Multilingual: translates to English for search, replies in user's language
 - Media-aware: paste a YouTube/audio/video URL to transcribe first
@@ -42,13 +42,20 @@ _ = load_dotenv(find_dotenv(filename=".env", usecwd=True))
 
 # ---------- llm / langchain ----------
 from pydantic import BaseModel, Field
-from langchain_openai import ChatOpenAI, OpenAIEmbeddings
-from langchain_community.vectorstores import FAISS
 from langchain.agents import AgentType, initialize_agent
 from langchain.tools import tool
 from langchain_core.messages import SystemMessage
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_community.vectorstores import Chroma
+from langchain.callbacks.tracers import LangChainTracer
+from langchain_openai import ChatOpenAI, OpenAIEmbeddings
+
+# LangSmith / tracer
+try:
+    from langchain.callbacks.tracers import LangChainTracer
+except Exception:
+    LangChainTracer = None
+
 # ---------- nlp utils ----------
 from rapidfuzz import process, fuzz
 # from langdetect import detect as lang_detect
@@ -61,6 +68,22 @@ from yt_dlp import YoutubeDL
 # import whisper  # requires ffmpeg installed/available
 import re
 from typing import Optional
+
+import sys
+
+from pathlib import Path
+from copy import deepcopy
+
+USER_ID = os.getenv("CHEF_USER_ID", "local-user")
+ROOT = Path(__file__).resolve().parents[1]  # .../final-project
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
+from kusina_memory import MemoryStore
+
+STATE_DIR = Path(r"C:\Users\happy\Documents\ironhack\kusina-bot\final-project\state")
+MEM = MemoryStore(STATE_DIR / "kusina_memory.json")
+prefs = MEM.get(USER_ID)
+
 # =========================
 # Default paths (YOUR folders)
 # =========================
@@ -79,10 +102,33 @@ EXPORTS_DIR   = Path(r"C:\Users\happy\Documents\ironhack\kusina-bot\final-projec
 LLM_MODEL  = os.getenv("CHEF_BOT_MODEL", "gpt-4o-mini")
 EMB_MODEL  = os.getenv("CHEF_EMBED_MODEL", "text-embedding-3-small")
 
+LANGSMITH_PROJECT = os.getenv("LANGCHAIN_PROJECT", "kusina-bot")
+
+def _maybe_tracer():
+    """Create a LangSmith tracer if the package and API key are present."""
+    if not LangChainTracer:
+        return None
+    if not os.getenv("LANGCHAIN_API_KEY"):
+        return None
+    try:
+        return LangChainTracer(project_name=LANGSMITH_PROJECT)
+    except Exception:
+        return None
+
+TRACER = _maybe_tracer()
+
+
 CHEF_TEMP = float(os.getenv("CHEF_TEMP", "0.5"))
 
-def llm_zero():
-    return ChatOpenAI(model=LLM_MODEL, temperature=CHEF_TEMP)
+def llm_zero(temperature: Optional[float] = None, model: Optional[str] = None):
+    """Central LLM factory so every chain gets the same callbacks/tracer."""
+    kwargs = {
+        "model": model or LLM_MODEL,
+        "temperature": CHEF_TEMP if temperature is None else temperature,
+    }
+    if TRACER:
+        kwargs["callbacks"] = [TRACER]
+    return ChatOpenAI(**kwargs)
 
 # FORCE_REPLY_LANG = os.getenv("CHEF_FORCE_REPLY_LANG")  or "en"
 FORCE_REPLY_LANG = os.getenv("CHEF_FORCE_REPLY_LANG")  
@@ -140,30 +186,7 @@ _add("ceb", "cebuano", "bisaya", "binisaya", "sugbuanon", "visayan")
 _add("ary", "moroccan arabic", "moroccan", "darija", "derija", "ddarija", "العربية المغربية", "الدارجة")
 _add("arz", "egyptian arabic", "egyptian", "masri", "masry", "العربية المصرية", "لهجة مصرية")
 
-# def parse_language_switch(text: str) -> Optional[str]:
-#     t = (text or "").strip().lower()
-#     t = re.sub(r"[^\w\s\-]", "", t)  # strip punctuation
 
-#     # A) Explicit commands: "/lang ko", "switch to korean", "reply in pt-br", etc.
-#     m = re.search(
-#         r"(?:^|[\s:/])(?:/lang|lang(?:uage)?|switch|reply|answer|speak|use|set|respond)\s*"
-#         r"(?:to|in|:)?\s*([a-z][a-z0-9\- ]+)\s*$",
-#         t
-#     )
-#     if m:
-#         key = re.sub(r"\s+", " ", m.group(1).strip())
-#         return LANG_ALIASES.get(key)
-
-#     # B) Bare full language name ONLY if the whole message is just that name
-#     if t in LANG_ALIASES and len(t) > 2:
-#         return LANG_ALIASES[t]
-
-#     # C) Bare 2-letter or hyphen code ONLY if the whole message is just the code
-#     if (re.fullmatch(r"[a-z]{2}", t) or re.fullmatch(r"[a-z]{2}-[a-z]{2}", t)) and t in LANG_ALIASES:
-#         return LANG_ALIASES[t]
-
-#     # Otherwise, don't switch (prevents "ako" triggering 'ko')
-#     return None
 def parse_language_switch(text: str) -> Optional[str]:
     t = (text or "").strip().lower()
     t = re.sub(r"[^\w\s\-]", "", t)  # strip punctuation
@@ -356,7 +379,7 @@ class KeywordIndex:
         return [d for _, d in ranked[:top_k]]
 
 # =========================
-# Embeddings + FAISS
+# Embeddings + Chroma vector store
 # =========================
 def _doc_to_embed_text(d: RecipeDoc) -> str:
     return "\n".join([
@@ -366,21 +389,6 @@ def _doc_to_embed_text(d: RecipeDoc) -> str:
         "Steps:\n" + "\n".join(d.steps or []),
     ]).strip()
 
-# def build_or_load_vectorstore(docs: List[RecipeDoc], persist_dir: Path, rebuild: bool=False):
-#     embed = OpenAIEmbeddings(model=EMB_MODEL)
-#     persist_dir.mkdir(parents=True, exist_ok=True)
-#     if (persist_dir / "index.faiss").exists() and (persist_dir / "index.pkl").exists() and not rebuild:
-#         return FAISS.load_local(str(persist_dir), embed, allow_dangerous_deserialization=True)
-#     texts, metas = [], []
-#     for d in docs:
-#         texts.append(_doc_to_embed_text(d))
-#         metas.append({
-#             "id": d.id, "title": d.title, "url": d.url, "source": d.source,
-#             "image_url": d.image_url, "cuisine": d.cuisine, "cook_time": d.cook_time_minutes
-#         })
-#     vs = FAISS.from_texts(texts=texts, embedding=embed, metadatas=metas)
-#     vs.save_local(str(persist_dir))
-#     return vs
 def build_or_load_vectorstore(docs, persist_dir: Path, rebuild: bool=False):
     embed = OpenAIEmbeddings(model=EMB_MODEL)
     persist_dir.mkdir(parents=True, exist_ok=True)
@@ -484,7 +492,7 @@ def _extract_video_id(url: str) -> Optional[str]:
 
 def _transcript_via_api(vid: str) -> Optional[str]:
     try:
-        segs = YouTubeTranscriptApi.get_transcript(vid, languages=["en"])
+        segs = YouTubeTranscriptApi.get_transcript(vid, languages=["en","tl","es","ja","de","fr"])
         return " ".join(s["text"] for s in segs).strip()
     except (TranscriptsDisabled, NoTranscriptFound):
         return None
@@ -530,9 +538,27 @@ def transcribe_media(url_or_path: str) -> str:
 DOCS: List[RecipeDoc] = []
 KIDX: Optional[KeywordIndex] = None
 VS = None
-LAST_HITS: List[Dict[str, Any]] = []  # <-- NEW: cache last recipe candidates
+# module level
+LAST_HITS: list[dict] = []
 
+def set_last_hits(new_hits: list[dict]) -> None:
+    safe = deepcopy(new_hits or [])
+    LAST_HITS.clear()
+    LAST_HITS.extend(safe)
+    try:
+        MEM.update(USER_ID, {"last_hits": safe})
+    except Exception:
+        pass
 
+def get_last_hits() -> list[dict]:
+    # return a copy so callers don't accidentally mutate the global list
+    if LAST_HITS:
+        return list(LAST_HITS)
+    try:
+        state = MEM.get(USER_ID) or {}
+        return list(state.get("last_hits") or [])
+    except Exception:
+        return []
 # =========================
 # Tools (for the Agent)
 # =========================
@@ -560,6 +586,52 @@ def is_real_recipe(ings, steps, meta):
     if len(ings) < 2 and len(steps) < 2:
         return False
     return True
+
+class SummarizeArgs(BaseModel):
+    url: str
+    target_lang: str | None = None
+
+@tool("summarize_video", args_schema=SummarizeArgs)
+def summarize_video(url: str, target_lang: str | None = None) -> str:
+    """Summarize a YouTube recipe: title, ~6 key ingredients, 3–5 steps + tiny tip. Answer in target_lang."""
+    vid = _extract_video_id(url)
+    tx  = _transcript_via_api(vid) if vid else None
+    if (not tx) and os.getenv("CHEF_TRANSCRIBE", "api_only").lower() != "api_only":
+        tx = transcribe_media(url)  # Whisper fallback (blocking)
+    if not tx:
+        return ensure_reply_language("Transcript unavailable right now.", target_lang or "en")
+    prompt = ChatPromptTemplate.from_messages([
+        ("system",
+         "From the transcript, write a friendly mini-recipe. "
+         "Return in the target language. Format:\n"
+         "Title\n\nKey ingredients (≤6 bullets)\n\nQuick steps (3–5 bullets)\n\nTip (1 line)"),
+        ("human", "Target language: {lang}\n\nTranscript:\n{tx}")
+    ])
+    out = (prompt | llm_zero(temperature=0)).invoke({"lang": target_lang or "en", "tx": tx})
+    return ensure_reply_language(out.content.strip(), target_lang or "en")
+
+
+class QAVideoArgs(BaseModel):
+    url: str
+    question: str
+    target_lang: str | None = None
+
+@tool("qa_video", args_schema=QAVideoArgs)
+def qa_video(url: str, question: str, target_lang: str | None = None) -> str:
+    """Answer a specific question using ONLY the video transcript. If not stated, say so briefly."""
+    vid = _extract_video_id(url)
+    tx  = _transcript_via_api(vid) if vid else None
+    if (not tx) and os.getenv("CHEF_TRANSCRIBE", "api_only").lower() != "api_only":
+        tx = transcribe_media(url)
+    if not tx:
+        return ensure_reply_language("I can’t read that video’s transcript right now.", target_lang or "en")
+    prompt = ChatPromptTemplate.from_messages([
+        ("system",
+         "Answer strictly from the transcript. If the answer isn’t stated, say 'Not stated in the video.' Be concise."),
+        ("human", "Target language: {lang}\nQuestion: {q}\n\nTranscript:\n{tx}")
+    ])
+    out = (prompt | llm_zero(temperature=0)).invoke({"lang": target_lang or "en", "q": question, "tx": tx})
+    return ensure_reply_language(out.content.strip(), target_lang or "en")
 
 # simple ingredient translations (extend anytime)
 ING_TRANSLATIONS = {
@@ -624,7 +696,7 @@ def tool_vector_search(query: str, top_k: int = 3, time_limit: Optional[int] = N
     filter_arg = meta_filter or None
 
     docs_scores = VS.similarity_search_with_score(
-        query, k=max(8, top_k * 3), filter=filter_arg
+        query, k=max(8, top_k * 3)
     )
 
     def contains_any(items, needles):
@@ -683,8 +755,8 @@ def tool_vector_search(query: str, top_k: int = 3, time_limit: Optional[int] = N
             "content": doc.page_content[:1000],
         })
     # cache for follow-up commands like "shopping list for these"
-    global LAST_HITS
-    LAST_HITS = hits
+    
+    set_last_hits(hits)
     return json.dumps({"hits": hits})
 
 class KSearchArgs(BaseModel):
@@ -721,7 +793,6 @@ class TranscribeArgs(BaseModel):
     url_or_path: str
 
 @tool("transcribe_media", args_schema=TranscribeArgs)
-
 def tool_transcribe_media(url_or_path: str) -> str:
     """Fast transcript: YouTube API only; no audio download. Returns {'transcript': ''} if unavailable."""
     if "youtube.com" in url_or_path or "youtu.be" in url_or_path:
@@ -816,9 +887,7 @@ def tool_make_shopping_list(recipes: Optional[List[Dict[str, Any]]] = None,
     """
         # fallback to cached hits if recipes not supplied
     if not recipes:
-        from typing import cast
-        global LAST_HITS
-        recipes = cast(List[Dict[str, Any]], LAST_HITS) or []
+        recipes = get_last_hits()
 
     # keep only what's needed (title + ingredients)
     slim = []
@@ -862,43 +931,6 @@ def tool_translate_text(text: str, target_lang: str) -> str:
     out = (prompt | llm_zero()).invoke({"lang": target_lang, "txt": text})
     return out.content.strip()
 
-
-# =========================
-# Agent system prompt
-# =========================
-# SYSTEM = SystemMessage(content=(
-# "You are a cheerful kitchen buddy and nutrition coach.\n"
-# "Voice & style:\n"
-# "- Sound human, warm, and encouraging. Use contractions and 1–2 friendly emojis max (e.g., 🍳🥗), never every line.\n"
-# "- Prefer short sentences and compact bullets. Avoid big headings/tables unless the user asks.\n"
-# "- Keep it actionable: 2–3 specific suggestions, each with 2–4 quick steps.\n"
-# "- Weave links inline with the title; don’t dump raw URLs or long source blocks.\n"
-# "- If results look generic (category pages with no real ingredients/steps), skip them.\n"
-# "\nWorkflow:\n"
-# "1) If input has media, call transcribe_media first.\n"
-# "2) Translate to English for search; reply in 'reply_language'.\n"
-# "3) Extract preferences JSON.\n"
-# "4) Call vector_search first (pass time_limit, cuisine, must_include, exclude_ingredients, avoid_allergens from vector_search_plan). Fallback to keyword_search if needed.\n"
-# "5) For each selected result, output a friendly mini-card:\n"
-# "   • Title (linked) — 1-line why it fits (time, diet, cravings).\n"
-# "   • Key ingredients (≤6).\n"
-# "   • 2–4 quick steps (imperative, one line each).\n"
-# "   • Optional: tiny tip/substitution.\n"
-# "6) Close with one casual question or offer (e.g., 'Want more like this or a quick shopping list?').\n"
-# "7) If the user asks for calories/macros/nutrition (e.g., ‘how many calories?’, ‘calorie count of X’), call estimate_nutrition with the ingredients of the most relevant recipe (use recent results if available). Always answer in reply_language.\n"
-# "8) If the user asks for a shopping/grocery list and recipes were just shown, call make_shopping_list (recipes may be omitted; use cached hits). Write the list in reply_language.\n"
-# "9) If asked, call create_cookbook with selected recipe_ids.\n"
-# "10) When replying in a non-English language, prefer ingredients_display if present; otherwise use ingredients.\n"
-# "11) If the user asks to translate text, call translate_text with raw_user_text (or the recipe text shown) and the requested language, then reply with ONLY that translated text.\n"
-# "12) Always reply in reply_language. If no strong recipe matches, still give 2–3 helpful ideas or substitutions in that same language; do not switch languages or apologize.\n"
-# "Keep it concise, friendly, and helpful."
-# "Examples (behavioral):\n"
-# "- If the user says: "in Spanish" and there is a previous answer, translate your previous answer into Spanish and continue in Spanish next turns.\n"
-# "- If the user asks: "calorie count of ceviche", estimate nutrition from a sensible ingredient list and answer in reply_language, e.g. in Spanish:\n"
-#   "Aproximado por porción: ~180 kcal (proteína 20–25 g, carbs 6–10 g, grasa 4–6 g). ¿Ajusto porciones o ingredientes?\n"
-# " -If the user asks: "translate ceviche recipe in kapampangan", translate the ceviche recipe into Kapampangan and reply with ONLY that translated text.\n"
-
-# ))
 
 SYSTEM = SystemMessage(content="""You are a cheerful kitchen buddy and nutrition coach.
 
@@ -957,14 +989,24 @@ def build_agent():
         tool_estimate_nutrition,
         tool_make_shopping_list,
         tool_translate_text,
+        summarize_video,
+        qa_video,   
     ]
+    # return initialize_agent(
+    #     tools=tools,
+    #     llm=ChatOpenAI(model=LLM_MODEL, temperature=CHEF_TEMP),
+    #     agent=AgentType.OPENAI_FUNCTIONS,
+    #     verbose=False,
+    #     handle_parsing_errors=True,
+    #     agent_kwargs={"system_message": SYSTEM},
     return initialize_agent(
         tools=tools,
-        llm=ChatOpenAI(model=LLM_MODEL, temperature=CHEF_TEMP),
+        llm=llm_zero(),  
         agent=AgentType.OPENAI_FUNCTIONS,
         verbose=False,
         handle_parsing_errors=True,
         agent_kwargs={"system_message": SYSTEM},
+        callbacks=[TRACER] if TRACER else None,
     )
 
 # =========================
@@ -1134,13 +1176,71 @@ def draft_ingredients_with_llm(dish: str) -> List[str]:
     return [ln.strip("-• ").strip() for ln in out.content.splitlines() if ln.strip()]
 
 def chat_once(agent, user_text: str, session_reply_lang: Optional[str] = None, last_bot_text: str = "") -> str:
+    
+    # --- normalize input + choose reply language first (needed by early routes)
     t = (user_text or "").strip()
+    user_lang_guess = detect_language(t)
+    if (not user_lang_guess or user_lang_guess == "unknown") and len(t) < 20 and t.isascii():
+        user_lang_guess = "en"
+    reply_lang = (FORCE_REPLY_LANG or session_reply_lang or user_lang_guess or "en")
 
-    # ---------- EARLY: TRANSLATION SHORT-CIRCUIT ----------
+    # --- VIDEO SUMMARIZE / QA INTENT ROUTING (tools) -------------------------
+    # 1) Explicit "summarize ... <url>"
+    url_from_text = maybe_media_url(t)
+    m_sum = (
+        re.search(r"\b(?:summarize|summary|tl;dr)\b", t, flags=re.I)
+        or re.search(r"\bsummarize\s+(?:the\s+)?(?:recipe\s+)?(?:from|in)\b", t, flags=re.I)
+    )
+    if m_sum and url_from_text:
+        try:
+            res = summarize_video.invoke({"url": url_from_text, "target_lang": reply_lang})
+            out = res.get("content", res) if isinstance(res, dict) else res
+
+            set_last_hits([{
+                "title": "From video",
+                "url": url_from_text,
+                "source": "youtube",
+                "ingredients": [],
+                "ingredients_display": [],
+                "steps": []
+            }])
+
+            return ensure_reply_language(str(out), reply_lang)
+        except Exception:
+            # fall through to non-blocking YouTube path below
+            pass
+
+    # 2) QA with a URL present: question words + URL (quick heuristic)
+    is_question = bool(
+        re.search(r"\b(what|which|when|why|how|temp|temperature|time|bake|rest|degree|minutes?)\b", t, flags=re.I)
+        or t.endswith("?")
+    )
+    if url_from_text and is_question:
+        q_clean = t.replace(url_from_text, " ").strip()
+        try:
+            res = qa_video.invoke({"url": url_from_text, "question": q_clean, "target_lang": reply_lang})
+            out = res.get("content", res) if isinstance(res, dict) else res
+
+            set_last_hits([{
+                "title": "From video",
+                "url": url_from_text,
+                "source": "youtube",
+                "ingredients": [],
+                "ingredients_display": [],
+                "steps": []
+            }])
+
+            return ensure_reply_language(str(out), reply_lang)
+        except Exception:
+            # fall through to non-blocking YouTube path below
+            pass
+
+    # --- TRANSLATION SHORT-CIRCUIT ------------------------------------------
     m  = re.search(r'^\s*translate\s+(.+?)\s+(?:to|into|in)\s+([a-zA-Z\- ]+)\s*$', t, flags=re.I)
-    m2 = re.search(r'^\s*translate(?:\s+(?:to|into))?\s+([a-zA-Z\- ]+)\s*$', t, flags=re.I)
+    m2 = re.search(r'^\s*translate(?:\s+(?:to|into))?\s+([a-zA-Z\- ]+)\s*$', t, flags=re.I)  # no text => use last_bot_text
     m3 = re.search(r'^(.*\S)\s+in\s+([a-zA-Z\- ]+)\s*$', t, flags=re.I)
     m4 = re.search(r'^\s*(?:in|en)\s+([a-zA-Z\- ]+)\s*$', t, flags=re.I)
+
     target_lang, payload = None, None
     if m:
         payload = m.group(1).strip()
@@ -1158,6 +1258,7 @@ def chat_once(agent, user_text: str, session_reply_lang: Optional[str] = None, l
         payload = last_bot_text
         lang_name = re.sub(r'\s+', ' ', m4.group(1).strip().lower())
         target_lang = LANG_ALIASES.get(lang_name) or LANG_ALIASES.get(lang_name.lower())
+
     if target_lang:
         if not payload:
             return "Paste the text you want me to translate. 🙂"
@@ -1172,18 +1273,11 @@ def chat_once(agent, user_text: str, session_reply_lang: Optional[str] = None, l
             out = (prompt | llm_zero()).invoke({"lang": target_lang, "txt": payload})
             return out.content.strip()
 
-    # ---------- REPLY LANGUAGE ----------
-    user_lang_guess = detect_language(user_text)
-    if (not user_lang_guess or user_lang_guess == "unknown") and len(user_text) < 20 and user_text.isascii():
-        user_lang_guess = "en"
-    reply_lang = (FORCE_REPLY_LANG or session_reply_lang or user_lang_guess or "en")
-
-    # ---------- NON-BLOCKING YOUTUBE SUMMARY PATH ----------
-    media = maybe_media_url(user_text)
+    # --- NON-BLOCKING YOUTUBE SUMMARY PATH (fallback when a URL exists) ------
+    media = url_from_text
     if media and ("youtube.com" in media or "youtu.be" in media):
         vid = _extract_video_id(media)
 
-        # helpers scoped here to keep this patch self-contained
         def _load_local_yt_json(video_id: Optional[str]) -> Optional[dict]:
             try:
                 if not video_id: return None
@@ -1195,13 +1289,11 @@ def chat_once(agent, user_text: str, session_reply_lang: Optional[str] = None, l
             return None
 
         def _kickoff_pipeline_async(url: str):
-            """Fire-and-forget: run your pipeline in background to cache structured recipe for next time."""
             try:
-                import subprocess, sys, tempfile
+                import subprocess, sys
                 PIPELINE_PATH = Path(r"C:\Users\happy\Documents\ironhack\kusina-bot\final-project\src\backend\scrapers\youtube_recipe_pipeline.py")
                 tmp = Path(DEFAULT_YT_DIR) / "_oneurl.txt"
                 tmp.write_text(url + "\n", encoding="utf-8")
-                # prefer API; keep it quiet
                 subprocess.Popen(
                     [sys.executable, str(PIPELINE_PATH), "--urls-file", str(tmp), "--prefer-api", "--max", "1"],
                     stdout=subprocess.DEVNULL, stderr=subprocess.STDOUT
@@ -1215,55 +1307,60 @@ def chat_once(agent, user_text: str, session_reply_lang: Optional[str] = None, l
             ings  = r.get("ingredients") or []
             steps = r.get("steps") or []
             url   = rec.get("url") or media
+
+            # Use either the outer vid or the stored video_id
+            vid2 = vid or rec.get("video_id")
+            hit_id = f"yt:{vid2}" if vid2 else "yt"
+            thumb  = f"https://img.youtube.com/vi/{vid2}/hqdefault.jpg" if vid2 else None
+            
             ings_local = localize_ingredients(ings, reply_lang)
             # cache for shopping list / nutrition
-            global LAST_HITS
-            LAST_HITS = [{
-                "id": f"yt:{vid}" if vid else (rec.get("video_id") or "yt"),
+            
+            set_last_hits([{
+                "id": hit_id,
                 "title": title, "url": url, "source": "youtube",
-                "image_url": f"https://img.youtube.com/vi/{vid}/hqdefault.jpg" if vid else None,
+                "image_url": thumb,
                 "ingredients": ings, "ingredients_display": ings_local,
                 "steps": steps[:4]
-            }]
-            bullets = "\n".join(f"- {i}" for i in ings_local[:6]) if ings_local else "- (walang listahan ng sangkap)"
-            steps_b = "\n".join(f"• {s}" for s in steps[:4]) if steps else "• (walang hakbang sa transcript)"
-            txt = f"**[{title}]({url})**\n\n**Key ingredients:**\n{bullets}\n\n**Quick steps:**\n{steps_b}\n\nGusto mo bang makita ang buong recipe o gumawa ng shopping list? 🥗"
+            }])
+
+            bullets = "\n".join(f"- {i}" for i in ings_local[:6]) if ings_local else "- (no ingredients listed)"
+            steps_b = "\n".join(f"• {s}" for s in steps[:4]) if steps else "• (no steps in transcript)"
+            txt = f"**[{title}]({url})**\n\n**Key ingredients:**\n{bullets}\n\n**Quick steps:**\n{steps_b}\n\nWant the full recipe or a shopping list? 🥗"
             return ensure_reply_language(txt, reply_lang)
 
-        # 1) Local per-video JSON
         rec = _load_local_yt_json(vid)
         if rec:
-            # also refresh cache in the background (fast API)
             _kickoff_pipeline_async(media)
             return _mini_card_from_record(rec)
 
-        # 2) Fast API transcript (no Whisper)
         tx = _transcript_via_api(vid) if vid else None
         if tx:
-            # Quick extract via LLM (no heavy schema), then background cache
             prompt = ChatPromptTemplate.from_messages([
                 ("system", "Extract a friendly mini-recipe from transcript: title, 6 key ingredients, 3–5 concise steps. Return in the target language."),
                 ("human", "Target language: {lang}\n\nTranscript:\n{tx}")
             ])
             out = (prompt | llm_zero()).invoke({"lang": reply_lang, "tx": tx})
             _kickoff_pipeline_async(media)
-            # cache a minimal hit so shopping list / nutrition works immediately
-            global LAST_HITS
-            LAST_HITS = [{"title": "From video", "url": media, "source": "youtube", "ingredients": [], "ingredients_display": [], "steps": []}]
+            
+            set_last_hits([{"title": "From video", "url": media, "source": "youtube", "ingredients": [], "ingredients_display": [], "steps": []}])
+
             return ensure_reply_language(out.content.strip(), reply_lang)
 
-        # 3) Nothing quick available: start background pipeline and respond immediately
         _kickoff_pipeline_async(media)
-        return ensure_reply_language("Kukunin ko ang buod ng video sa likod, tapos babalikan kita agad. Samantala, gusto mo ba ng ibang mabilis na ideya habang naghihintay? 🍳", reply_lang)
+        return ensure_reply_language("I’ll fetch the video summary in the background and ping you when it’s ready. Want a quick alternative while we wait? 🍳", reply_lang)
 
-    # ---------- EARLY: CALORIES / MACROS SHORT-CIRCUIT ----------
+    # --- EARLY: CALORIES / MACROS SHORT-CIRCUIT --------------------------------
     if re.search(r"(?:calorie|calories|kcal|nutrition|nutritional|macros?|protein|carbs?|fat|kilocal)", t, flags=re.I):
         def _ingredients_from_hits():
-            try:
-                hit = (LAST_HITS or [])[0]
-                return (hit.get("ingredients") or hit.get("ingredients_display") or []) if hit else []
-            except Exception:
+            hits = get_last_hits()  
+            if not hits:
                 return []
+            hit = hits[0]
+            ings = hit.get("ingredients") or hit.get("ingredients_display") or []
+            if isinstance(ings, str):
+                ings = [ings]
+            return ings
         def _ingredients_from_query(q: str):
             global VS
             if not VS or not q:
@@ -1288,8 +1385,7 @@ def chat_once(agent, user_text: str, session_reply_lang: Optional[str] = None, l
                 ("human", "{dish}")
             ])
             out = (prompt | llm_zero()).invoke({"dish": dish})
-            lines = [s.strip(" -•\t") for s in out.content.splitlines() if s.strip()]
-            return lines[:12]
+            return [s.strip(" -•\t") for s in out.content.splitlines() if s.strip()][:12]
 
         ings = _ingredients_from_hits()
         if not ings:
@@ -1313,21 +1409,27 @@ def chat_once(agent, user_text: str, session_reply_lang: Optional[str] = None, l
         except Exception:
             return ensure_reply_language("I couldn't estimate right now. Share the ingredient list and servings, and I’ll calculate it.", reply_lang)
 
-    # ---------- TRANSLATE TO EN FOR SEARCH ----------
+    # --- TRANSLATE TO EN FOR SEARCH -------------------------------------------
     text_en = translate_to_english(user_text)
 
-    # ---------- SHOPPING LIST SHORT-CIRCUIT ----------
+    # --- SHOPPING LIST SHORT-CIRCUIT ------------------------------------------
     if re.search(r"\b(shopping|grocery)\s+list\b", user_text, flags=re.I):
-        try:
-            out = tool_make_shopping_list.invoke({
-                "recipes": None, "servings_multiplier": 1.0, "target_lang": reply_lang
-            })
-            return ensure_reply_language(str(out), reply_lang)
-        except Exception:
-            if not LAST_HITS:
-                return ensure_reply_language("Tell me which recipes you want in the shopping list. 🙂", reply_lang)
+        # ensure we actually have recent hits to aggregate
+        if not get_last_hits():
+            return ensure_reply_language(
+                "Tell me which recipes you want in the shopping list. 🙂",
+                reply_lang
+            )
 
-    # ---------- NO-INDEX QUICK FALLBACK ----------
+        out = tool_make_shopping_list.invoke({
+            "recipes": None,               # tool will fallback to get_last_hits()
+            "servings_multiplier": 1.0,
+            "target_lang": reply_lang
+        })
+        # .invoke may return a string or a LC message-like object; normalize
+        out_str = out if isinstance(out, str) else str(out)
+        return ensure_reply_language(out_str, reply_lang)
+    # --- NO-INDEX QUICK FALLBACK ----------------------------------------------
     if VS is None or not DOCS:
         quick = ChatPromptTemplate.from_messages([
             ("system", "You are a warm kitchen buddy. Write 3 snack/meal ideas that fit the user's vibe. Keep each idea to 1–2 lines with 2–3 quick steps. Use the target language."),
@@ -1336,7 +1438,7 @@ def chat_once(agent, user_text: str, session_reply_lang: Optional[str] = None, l
         out = (quick | llm_zero()).invoke({"lang": reply_lang, "req": text_en})
         return ensure_reply_language(out.content.strip(), reply_lang)
 
-    # ---------- PREFERENCES + SEARCH PLAN ----------
+    # --- PREFERENCES + SEARCH PLAN --------------------------------------------
     prefs = extract_prefs(text_en)
     prefs.language = reply_lang
     include = [x.strip() for x in (prefs.include_ingredients or []) if x and x.strip()]
@@ -1350,8 +1452,16 @@ def chat_once(agent, user_text: str, session_reply_lang: Optional[str] = None, l
         "avoid_allergens": avoid,
         "display_lang": reply_lang,
     }
+    # persist language choice (if user switched) and last preferences
+    try:
+        MEM.update(USER_ID, {
+            "reply_lang": reply_lang,
+            "last_prefs": prefs.model_dump()
+        })
+    except Exception:
+        pass
 
-    # ---------- AGENT CALL ----------
+    # --- AGENT CALL ------------------------------------------------------------
     directive = {
         "translated_text_en": text_en,
         "raw_user_text": user_text,
@@ -1365,17 +1475,24 @@ def chat_once(agent, user_text: str, session_reply_lang: Optional[str] = None, l
     return ensure_reply_language(answer, reply_lang)
 
 
+
 # =========================
 # Main
 # =========================
 def main():
+    global USER_ID, SESSION_REPLY_LANG
+    USER_ID = os.getenv("CHEF_USER_ID", "HappyUserTest")  # Default user ID for testing; replace with actual user ID in production
+    user_state = MEM.get(USER_ID) or {}
+    SESSION_REPLY_LANG = user_state.get("reply_lang") or SESSION_REPLY_LANG
+    set_last_hits(user_state.get("last_hits") or [])
+
     ap = argparse.ArgumentParser(description="Kusina Bot — Chef & Nutritionist (Agents + Tools + Embeddings)")
     ap.add_argument("--yt-dir",   type=str, default=DEFAULT_YT_DIR,   help="Folder with per-video JSON files")
     ap.add_argument("--yt-jsonl", type=str, default=DEFAULT_YT_JSONL, help="YouTube recipes.jsonl")
     ap.add_argument("--wb-dir",   type=str, default=DEFAULT_WB_DIR,   help="Folder with per-recipe JSON files")
     ap.add_argument("--wb-jsonl", type=str, default=DEFAULT_WB_JSONL, help="Wikibooks recipes.jsonl")
-    ap.add_argument("--vs-dir",   type=str, default=DEFAULT_VS_DIR,   help="Folder to persist FAISS index")
-    ap.add_argument("--rebuild-vs", action="store_true", help="Force rebuild of FAISS index")
+    ap.add_argument("--db-dir", type=str, default=DEFAULT_VS_DIR, help="Folder to persist Chroma DB")
+    ap.add_argument("--rebuild-vs", action="store_true", help="Force rebuild of Chroma index")
     ap.add_argument("--force-reply-lang", type=str, default=None, help="Force assistant reply language (e.g., en, nl, es).")
     args = ap.parse_args()
     
@@ -1390,7 +1507,7 @@ def main():
     yt_jsonl = Path(args.yt_jsonl)
     wb_dir   = Path(args.wb_dir)
     wb_jsonl = Path(args.wb_jsonl)
-    vs_dir   = Path(args.vs_dir)
+    vs_dir   = Path(args.db_dir)
 
     # Load both sources (JSONL + JSON files), deduped
     yt_docs = load_youtube(yt_dir, yt_jsonl if yt_jsonl.exists() else None)
@@ -1402,7 +1519,7 @@ def main():
     if not DOCS:
         print("Warning: no recipes found. Check paths or run your pipelines first.")
 
-    # Keyword index + FAISS vector index
+    # Keyword index + Chroma vector index
     KIDX = KeywordIndex(DOCS)
     VS = build_or_load_vectorstore(DOCS, persist_dir=vs_dir, rebuild=args.rebuild_vs)
     print("Vector store ready.")
@@ -1410,7 +1527,6 @@ def main():
     agent = build_agent()
     last_bot_text = ""
 
-    global SESSION_REPLY_LANG
     print("\nKusina Bot ready. I am your kitchen assistant. How can I help you? Ctrl+C to exit.\n")
     while True:
         try:
