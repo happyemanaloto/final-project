@@ -68,47 +68,113 @@ import sounddevice as sd
 import soundfile as sf
 import pyttsx3
 
-VOICE_ENABLED = False
-TTS_ENGINE = None
+# VOICE_ENABLED = False
+# TTS_ENGINE = None
 
-def init_tts(prefer_lang: str | None = None, rate: int | None = None):
-    """Init (or reuse) a TTS engine, try to pick a voice that matches prefer_lang if available."""
-    global TTS_ENGINE
-    if TTS_ENGINE is not None:
-        return TTS_ENGINE
-    eng = pyttsx3.init()
-    if rate:
-        eng.setProperty("rate", rate)
-    if prefer_lang:
-        # best-effort: pick a voice whose language tag contains prefer_lang (e.g., 'en', 'es', 'tl')
-        try:
-            want = prefer_lang.lower()
-            for v in eng.getProperty("voices"):
-                # voices[i].languages can be bytes like b'\x05en_US' or a list
-                langs = getattr(v, "languages", []) or []
-                tags = []
-                for L in langs:
-                    try:
-                        tags.append(L.decode("utf-8", "ignore"))
-                    except Exception:
-                        tags.append(str(L))
-                blob = " ".join([v.id, v.name or "", " ".join(tags)]).lower()
-                if want in blob:
-                    eng.setProperty("voice", v.id)
-                    break
-        except Exception:
-            pass
-    TTS_ENGINE = eng
-    return TTS_ENGINE
+# def init_tts(prefer_lang: str | None = None, rate: int | None = None):
+#     """Init (or reuse) a TTS engine, try to pick a voice that matches prefer_lang if available."""
+#     global TTS_ENGINE
+#     if TTS_ENGINE is not None:
+#         return TTS_ENGINE
+#     eng = pyttsx3.init()
+#     if rate:
+#         eng.setProperty("rate", rate)
+#     if prefer_lang:
+#         # best-effort: pick a voice whose language tag contains prefer_lang (e.g., 'en', 'es', 'tl')
+#         try:
+#             want = prefer_lang.lower()
+#             for v in eng.getProperty("voices"):
+#                 # voices[i].languages can be bytes like b'\x05en_US' or a list
+#                 langs = getattr(v, "languages", []) or []
+#                 tags = []
+#                 for L in langs:
+#                     try:
+#                         tags.append(L.decode("utf-8", "ignore"))
+#                     except Exception:
+#                         tags.append(str(L))
+#                 blob = " ".join([v.id, v.name or "", " ".join(tags)]).lower()
+#                 if want in blob:
+#                     eng.setProperty("voice", v.id)
+#                     break
+#         except Exception:
+#             pass
+#     TTS_ENGINE = eng
+#     return TTS_ENGINE
+
+# def tts_say(text: str, lang: str | None = None):
+#     """Speak the given text (already in reply language)."""
+#     eng = init_tts(prefer_lang=lang)
+#     try:
+#         eng.say(text)
+#         eng.runAndWait()
+#     except Exception:
+#         pass  # don't crash if audio device is busy
+# ---------- voice TTS (gTTS) ----------
+TTS_FORCE_LANG = None
+TTS_ONLINE = True  # gTTS requires internet
+
+# Map your internal lang codes to gTTS language tags
+# (gTTS supported: https://gtts.readthedocs.io/en/latest/module.html#available-languages)
+LANG_TO_GTTS = {
+    "en": "en", "en-us": "en", "es": "es", "fr": "fr", "de": "de", "nl": "nl",
+    "it": "it", "pt": "pt", "pt-br": "pt", "ja": "ja", "ko": "ko",
+    "zh": "zh-cn", "zh-cn": "zh-cn", "zh-tw": "zh-tw",
+    "vi": "vi", "id": "id", "th": "th", "hi": "hi", "ar": "ar", "ru": "ru",
+    "tr": "tr", "el": "el", "he": "he",
+    "sv": "sv", "no": "no", "da": "da", "fi": "fi", "pl": "pl", "cs": "cs",
+    "hu": "hu", "ro": "ro", "bg": "bg", "uk": "uk",
+    "ms": "ms", "ta": "ta", "bn": "bn", "ur": "ur", "fa": "fa", "sw": "sw",
+    "tl": "tl",  # Tagalog
+    # Not supported by gTTS (fallbacks below):
+    "pam": "tl",   # Kapampangan -> Tagalog as nearest
+    "ilo": "tl",   # Ilocano -> Tagalog
+    "ceb": "tl",   # Cebuano -> Tagalog
+    "ary": "ar",   # Moroccan Arabic -> Arabic
+    "arz": "ar",   # Egyptian Arabic -> Arabic
+}
+
+def _pick_gtts_lang(prefer_lang: str | None) -> str:
+    if not prefer_lang:
+        return "en"
+    key = prefer_lang.lower()
+    return LANG_TO_GTTS.get(key, LANG_TO_GTTS.get(key.split("-")[0], "en"))
 
 def tts_say(text: str, lang: str | None = None):
-    """Speak the given text (already in reply language)."""
-    eng = init_tts(prefer_lang=lang)
+    """Speak text with gTTS (online). Falls back to print on failure."""
     try:
-        eng.say(text)
-        eng.runAndWait()
-    except Exception:
-        pass  # don't crash if audio device is busy
+        from gtts import gTTS
+        from playsound import playsound
+        from pathlib import Path
+        import tempfile, time
+
+        # 👇 use forced lang if set
+        final_lang = TTS_FORCE_LANG or lang or "en"
+        code = _pick_gtts_lang(final_lang)
+
+        # gTTS chunking...
+        chunks, buf, limit = [], [], 180
+        for token in re.split(r"(\s+)", text):
+            cand = "".join(buf) + token
+            if len(cand) > limit:
+                chunks.append("".join(buf).strip()); buf = [token]
+            else:
+                buf.append(token)
+        if buf: chunks.append("".join(buf).strip())
+
+        for ch in chunks:
+            if not ch: continue
+            tts = gTTS(text=ch, lang=code, slow=False)
+            mp3_path = Path(tempfile.gettempdir()) / f"kusina_tts_{int(time.time()*1000)}.mp3"
+            tts.save(str(mp3_path)); playsound(str(mp3_path))
+            try: mp3_path.unlink(missing_ok=True)
+            except Exception: pass
+    except Exception as e:
+        try:
+            import pyttsx3
+            eng = pyttsx3.init(); eng.say(text); eng.runAndWait()
+        except Exception:
+            print(f"[TTS] Failed: {e}")
+
 
 def record_wav(seconds: int = 6,
                samplerate: int | None = None,
@@ -602,7 +668,7 @@ def _transcript_via_api(vid: str) -> Optional[str]:
     except Exception:
         return None
 
-WHISPER_MODEL = os.getenv("CHEF_WHISPER_MODEL", "base")
+WHISPER_MODEL = os.getenv("CHEF_WHISPER_MODEL", "small")
 _WHISPER = {}
 def _whisper_model(size: str | None = None):
     import os
@@ -1580,110 +1646,115 @@ def chat_once(agent, user_text: str, session_reply_lang: Optional[str] = None, l
     answer = result.get("output", str(result)) or ""
     return ensure_reply_language(answer, reply_lang)
 
-
-
-# =========================
-# Main
-# =========================
 def main():
-    global USER_ID, SESSION_REPLY_LANG
-    USER_ID = os.getenv("CHEF_USER_ID", "HappyUserTest")  # Default user ID for testing; replace with actual user ID in production
+    global USER_ID, SESSION_REPLY_LANG, FORCE_REPLY_LANG, DOCS, KIDX, VS
+
+    # ---- load user state / reply language memory ----
+    USER_ID = os.getenv("CHEF_USER_ID", "HappyUserTest")
     user_state = MEM.get(USER_ID) or {}
     SESSION_REPLY_LANG = user_state.get("reply_lang") or SESSION_REPLY_LANG
     set_last_hits(user_state.get("last_hits") or [])
 
+    # ---- CLI args ----
     ap = argparse.ArgumentParser(description="Kusina Bot — Chef & Nutritionist (Agents + Tools + Embeddings)")
     ap.add_argument("--yt-dir",   type=str, default=DEFAULT_YT_DIR,   help="Folder with per-video JSON files")
     ap.add_argument("--yt-jsonl", type=str, default=DEFAULT_YT_JSONL, help="YouTube recipes.jsonl")
     ap.add_argument("--wb-dir",   type=str, default=DEFAULT_WB_DIR,   help="Folder with per-recipe JSON files")
     ap.add_argument("--wb-jsonl", type=str, default=DEFAULT_WB_JSONL, help="Wikibooks recipes.jsonl")
-    ap.add_argument("--db-dir", type=str, default=DEFAULT_VS_DIR, help="Folder to persist Chroma DB")
+    ap.add_argument("--db-dir",   type=str, default=DEFAULT_VS_DIR,   help="Folder to persist Chroma DB")
     ap.add_argument("--rebuild-vs", action="store_true", help="Force rebuild of Chroma index")
+
     ap.add_argument("--force-reply-lang", type=str, default=None, help="Force assistant reply language (e.g., en, nl, es).")
     ap.add_argument("--voice", action="store_true", help="Enable voice input/output (push-to-talk).")
     ap.add_argument("--mic-index", type=int, default=None, help="Input device index for sounddevice (see voice_sanity.py).")
     ap.add_argument("--samplerate", type=int, default=16000, help="Microphone sample rate (default 16000).")
     ap.add_argument("--whisper-model", type=str, default=None, help="Whisper model: tiny | base | small | medium | large | large-v3")
-
-    import sounddevice as sd
+    ap.add_argument("--tts-lang", type=str, default=None, help="Force gTTS language (e.g., en, tl, nl).")
 
     args = ap.parse_args()
-    # --- voice device + whisper selection ---
 
+    global TTS_FORCE_LANG
+    TTS_FORCE_LANG = args.tts_lang  # None, or e.g. "en", "tl", "nl"
+
+    # ---- Whisper model selection (set before any STT) ----
     if args.whisper_model:
         os.environ["CHEF_WHISPER_MODEL"] = args.whisper_model
         global _WHISPER
-        _WHISPER = {}  # force reload with the chosen size
+        _WHISPER = {}  # force reload when _whisper_model() is called
 
+    # ---- language override from CLI (text reply language) ----
+    FORCE_REPLY_LANG = args.force_reply_lang or FORCE_REPLY_LANG
 
-    user = stt_from_mic(
-        max_seconds=8,
-        lang_hint=SESSION_REPLY_LANG or "en",
-        samplerate=args.samplerate,
-        device_index=args.mic_index
-    )
+    # ---- optional: force TTS playback language only (keeps text reply language behavior) ----
+    # if getattr(args, "tts_lang", None):
+    #     def tts_say(text: str, lang: str | None = None, _force=args.tts_lang):
+    #         code = _pick_gtts_lang(_force)
+    #         try:
+    #             from gtts import gTTS
+    #             from playsound import playsound
+    #             import tempfile, time
+    #             from pathlib import Path
+    #             tts = gTTS(text=text, lang=code, slow=False)
+    #             mp3_path = Path(tempfile.gettempdir()) / f"kusina_tts_{int(time.time()*1000)}.mp3"
+    #             tts.save(str(mp3_path))
+    #             playsound(str(mp3_path))
+    #             mp3_path.unlink(missing_ok=True)
+    #         except Exception as e:
+    #             print(f"[TTS] Failed: {e}")
 
-    try:
-        if args.mic_index is not None:
-            import sounddevice as sd
-            sd.default.device = (args.mic_index, None)   # input device only
-            if args.samplerate:
-                sd.default.samplerate = args.samplerate
-            dinfo = sd.query_devices(args.mic_index)
-            sr = args.samplerate or int(dinfo.get("default_samplerate") or 16000)
-            sd.check_input_settings(device=args.mic_index, channels=1, samplerate=sr)
-            print(f"[voice] using input device {args.mic_index}: {dinfo['name']} @ {sr}Hz")
-        cur_dev = sd.default.device
-        cur_sr = sd.default.samplerate
-        print(f"[voice] mic device={cur_dev} samplerate={cur_sr} whisper={os.getenv('CHEF_WHISPER_MODEL','base')}")
-    except Exception as e:
-        print(f"[voice] Could not set mic device/samplerate: {e}")
-
-    if args.whisper_model:
-        os.environ["CHEF_WHISPER_MODEL"] = args.whisper_model  # used by stt/whisper loader
-
-    if args.voice:
-        MIC_INDEX = 6  # try 6 first; if wrong, try 17 or 22
-        sd.default.device = (MIC_INDEX, None)  # (input, output). None = keep default output.
-        sd.default.samplerate = 16000
-        sd.default.channels = 1
-
-    global FORCE_REPLY_LANG
-    if args.force_reply_lang:
-        FORCE_REPLY_LANG = args.force_reply_lang
-
+    # ---- API key check (needed for embeddings + LLM translate/extract) ----
     if not os.getenv("OPENAI_API_KEY"):
         raise RuntimeError("OPENAI_API_KEY missing. Put it in your .env")
 
+    # ---- load data & build indices ----
     yt_dir   = Path(args.yt_dir)
     yt_jsonl = Path(args.yt_jsonl)
     wb_dir   = Path(args.wb_dir)
     wb_jsonl = Path(args.wb_jsonl)
     vs_dir   = Path(args.db_dir)
 
-    # Load both sources (JSONL + JSON files), deduped
     yt_docs = load_youtube(yt_dir, yt_jsonl if yt_jsonl.exists() else None)
     wb_docs = load_wikibooks(wb_dir, wb_jsonl if wb_jsonl.exists() else None)
 
-    global DOCS, KIDX, VS
     DOCS = yt_docs + wb_docs
     print(f"Loaded {len(DOCS)} recipes ({len(yt_docs)} YouTube, {len(wb_docs)} Wikibooks).")
     if not DOCS:
         print("Warning: no recipes found. Check paths or run your pipelines first.")
 
-    # Keyword index + Chroma vector index
     KIDX = KeywordIndex(DOCS)
     VS = build_or_load_vectorstore(DOCS, persist_dir=vs_dir, rebuild=args.rebuild_vs)
     print("Vector store ready.")
 
     agent = build_agent()
-    if args.voice:
-        init_tts(prefer_lang=SESSION_REPLY_LANG)
-        print("🎙  Voice mode on. Press Enter to talk (or type text instead).")
 
+    # ---- audio device configuration (only if needed) ----
+    try:
+        if args.mic_index is not None:
+            sd.default.device = (args.mic_index, None)  # input only
+            if args.samplerate:
+                sd.default.samplerate = args.samplerate
+            dinfo = sd.query_devices(args.mic_index)
+            sr = args.samplerate or int(dinfo.get("default_samplerate") or 16000)
+            sd.check_input_settings(device=args.mic_index, channels=1, samplerate=sr)
+            print(f"[voice] using input device {args.mic_index}: {dinfo['name']} @ {sr}Hz")
+        elif args.voice:
+            # Fallback to system defaults; you can add heuristics here if needed
+            sd.default.samplerate = args.samplerate or 16000
+            sd.default.channels = 1
+            print("[voice] using system default input device")
+        cur_dev = sd.default.device
+        cur_sr = sd.default.samplerate
+        print(f"[voice] mic device={cur_dev} samplerate={cur_sr} whisper={os.getenv('CHEF_WHISPER_MODEL','base')}")
+    except Exception as e:
+        print(f"[voice] Could not set mic device/samplerate: {e}")
+
+    # ---- UI banner ----
     last_bot_text = ""
-
+    if args.voice:
+        print("🎙  Voice mode on. Press Enter to talk (or type).")
     print("\nKusina Bot ready. I am your kitchen assistant. How can I help you? Ctrl+C to exit.\n")
+
+    # ---- main loop ----
     while True:
         try:
             if args.voice:
@@ -1691,8 +1762,13 @@ def main():
                 if typed:
                     user = typed
                 else:
-                    print("Listening… (up to 6s)")
-                    user = stt_from_mic(max_seconds=8, lang_hint=SESSION_REPLY_LANG or "en")
+                    print("Listening… (up to 8s)")
+                    user = stt_from_mic(
+                        max_seconds=8,
+                        lang_hint=SESSION_REPLY_LANG or "en",
+                        samplerate=args.samplerate,
+                        device_index=args.mic_index
+                    )
                     if not user:
                         print("(Didn’t catch that—try again.)")
                         continue
@@ -1703,7 +1779,7 @@ def main():
             if not user:
                 continue
 
-            # Language switch?
+            # language switch command?
             maybe_lang = parse_language_switch(user)
             if maybe_lang:
                 SESSION_REPLY_LANG = maybe_lang
@@ -1715,12 +1791,13 @@ def main():
                 last_bot_text = msg
                 continue
 
-            # Ephemeral lang detection (unchanged) …
+            # ephemeral language detection (long non-English messages)
             ephemeral_lang = SESSION_REPLY_LANG
             det = detect_language(user)
             if det in LANG_ALIASES.values() and det != SESSION_REPLY_LANG and len(user) >= 60:
                 ephemeral_lang = det
 
+            # answer once
             answer = chat_once(agent, user, session_reply_lang=ephemeral_lang, last_bot_text=last_bot_text)
 
             print("\nAssistant:\n" + answer + "\n")
