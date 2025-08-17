@@ -1,7 +1,7 @@
 from __future__ import annotations
 from .telemetry import init_langsmith
 
-import json, re
+import json, re, os
 from typing import Optional, List, Dict
 
 from langchain.agents import AgentType, initialize_agent
