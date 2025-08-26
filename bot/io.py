@@ -5,7 +5,7 @@ import sounddevice as sd, soundfile as sf
 
 from .data import load_all_docs, build_or_load_vectorstore
 from .nlp import detect_language, parse_language_switch, ensure_reply_language, llm_zero
-from .agent import build_agent, chat_once
+from .agentX import build_agent, chat_once
 from .tools import bind_vectorstore, bind_session_hooks  # KeywordIndex binding optional
 from .session import SessionMemory
 

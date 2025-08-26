@@ -16,6 +16,12 @@ from yt_dlp import YoutubeDL
 # Local helpers
 from .nlp import ensure_reply_language, localize_ingredients
 
+# Import your full pipeline
+try:
+    from .transcribe_videos import process_source as _process_local_media
+except Exception:
+    _process_local_media = None
+
 # ========= Session + VectorStore bindings =========
 VS = None
 _get_hits: Optional[Callable[[], list]] = None
@@ -203,38 +209,6 @@ def _get_transcript_external(url: str) -> Optional[str]:
         print(f"[transcribe] external pipeline failed: {e}")
         return None
 
-
-# def transcribe_youtube_best_effort(url: str) -> str:
-#     """
-#     Master switch for transcript strategy:
-
-#     - CHEF_TRANSCRIBE_BACKEND=external → pipeline only
-#     - CHEF_TRANSCRIBE_BACKEND=internal → internal only (API → Whisper)
-#     - CHEF_TRANSCRIBE_BACKEND=auto (default) → pipeline → API → Whisper
-#     """
-#     backend = (os.getenv("CHEF_TRANSCRIBE_BACKEND", "auto") or "").lower()
-
-#     # external only
-#     if backend == "external":
-#         return _get_transcript_external_subprocess(url) or ""
-
-#     # internal only  (API → Whisper)
-#     if backend == "internal":
-#         vid = _extract_video_id(url)
-#         txt = _transcript_via_api(vid) if vid else None
-#         if txt:
-#             return txt
-#         return _transcribe_whisper_local(url) or ""
-
-#     # auto (pipeline → API → Whisper)
-#     txt = _get_transcript_external_subprocess(url)
-#     if txt:
-#         return txt
-#     vid = _extract_video_id(url)
-#     txt = _transcript_via_api(vid) if vid else None
-#     if txt:
-#         return txt
-#     return _transcribe_whisper_local(url) or ""
 import os
 
 def transcribe_youtube_best_effort(url: str, max_videos: int = 1) -> str:
@@ -294,46 +268,6 @@ def _transcribe_any(url_or_path: str) -> str:
         print(f"[transcribe] whisper failed: {e}")
         return ""
 
-# def _get_transcript_external_subprocess(url: str) -> Optional[str]:
-#     """
-#     Call your YouTube pipeline as a subprocess and read the saved transcript.
-
-#     Looks for the script at:
-#       <repo_root>/scripts/youtube_recipe_pipeline.py
-#       <repo_root>/youtube_recipe_pipeline.py        (fallback)
-#     and reads:
-#       <repo_root>/data/recipes/<video_id>.json
-#     """
-#     try:
-#         import sys, json, subprocess, time
-#         tmp = Path(tempfile.gettempdir()) / f"one_url_{int(time.time())}.txt"
-#         tmp.write_text(url + "\n", encoding="utf-8")
-
-#         # Resolve repo root and script
-#         repo_root = Path(__file__).resolve().parents[1]
-#         candidates = [
-#             repo_root / "scripts" / "youtube_recipe_pipeline.py",
-#             repo_root / "youtube_recipe_pipeline.py",
-#         ]
-#         script_path = next((p for p in candidates if p.exists()), None)
-#         if not script_path:
-#             print("[transcribe] pipeline script not found in scripts/ or project root")
-#             return None
-
-#         cmd = [sys.executable, str(script_path), "--urls-file", str(tmp), "--max", "1", "--prefer-api"]
-#         subprocess.run(cmd, cwd=str(repo_root), check=True)
-
-#         vid = _extract_video_id(url)
-#         if not vid:
-#             return None
-#         out_json = repo_root / "data" / "recipes" / f"{vid}.json"
-#         if not out_json.exists():
-#             return None
-#         obj = json.loads(out_json.read_text(encoding="utf-8"))
-#         return (obj.get("transcript") or "").strip()
-#     except Exception as e:
-#         print("[transcribe] external subprocess failed:", e)
-#         return None
 def _get_transcript_external_subprocess(url: str, max_videos: int = 1) -> Optional[str]:
     """
     Runs: python youtube_recipe_pipeline.py --urls-file <tmp> --max N --prefer-api
@@ -495,18 +429,102 @@ def transcribe_media(url_or_path: str) -> str:
     """
     if "youtube.com" in url_or_path or "youtu.be" in url_or_path:
         return json.dumps({"transcript": transcribe_youtube_best_effort(url_or_path) or ""})
-    #     vid = _extract_video_id(url_or_path)
-    #     if vid:
-    #         t = _transcript_via_api(vid)
-    #         return json.dumps({"transcript": t or ""})
-    # if os.getenv("CHEF_TRANSCRIBE", "api_only").lower() != "api_only":
-    #     return json.dumps({"transcript": _transcribe_any(url_or_path)})
-    # return json.dumps({"transcript": ""})
-    # non-YouTube: optional Whisper
+
     mode = (os.getenv("CHEF_TRANSCRIBE", "api_only") or "").lower()
     if mode != "api_only":
         return json.dumps({"transcript": _transcribe_whisper_local(url_or_path)})
     return json.dumps({"transcript": ""})
+# ========= Local media (full pipeline) =========
+class TranscribeLocalArgs(BaseModel):
+    path: str  # local audio/video file path
+
+@tool("transcribe_local_media", args_schema=TranscribeLocalArgs)
+def transcribe_local_media(path: str) -> str:
+    """
+    Run the full faster-whisper pipeline on a local media file.
+    Returns JSON: {"transcript_path": "<...raw/...json>", "chunks_path": "<...chunks/...jsonl>", "meta": {...}}
+    """
+    if _process_local_media is None:
+        return json.dumps({"error": "pipeline not importable (bot/transcribe_videos.py missing)"} )
+    p = Path(path)
+    if not p.exists():
+        return json.dumps({"error": f"file not found: {path}"})
+    try:
+        res = _process_local_media(str(p))
+        # res: {"id","title","chunks","language","elapsed_sec","paths":{"raw","chunks"}}
+        return json.dumps({"transcript_path": res["paths"]["raw"], "chunks_path": res["paths"]["chunks"], "meta": res})
+    except Exception as e:
+        return json.dumps({"error": str(e)})
+
+class SummarizeTranscriptArgs(BaseModel):
+    transcript_path: str
+    target_lang: str = "en"
+
+@tool("summarize_transcript_file", args_schema=SummarizeTranscriptArgs)
+def summarize_transcript_file(transcript_path: str, target_lang: str = "en") -> str:
+    """
+    Summarize a saved transcript JSON ({segments:[{start,end,text},...]}) into:
+    Title; ≤6 key ingredients; 3–5 steps; 1 tip (localized). Also caches a minimal session hit.
+    """
+    p = Path(transcript_path)
+    if not p.exists():
+        return ensure_reply_language("Transcript file not found.", target_lang or "en")
+
+    try:
+        obj = json.loads(p.read_text(encoding="utf-8"))
+        segs = obj.get("segments") or []
+        title = obj.get("title") or (obj.get("webpage_url") or obj.get("id") or "Local media")
+        raw_txt = " ".join([s.get("text","").strip() for s in segs if s.get("text")]).strip()
+    except Exception:
+        return ensure_reply_language("Could not read transcript JSON.", target_lang or "en")
+
+    if not raw_txt:
+        return ensure_reply_language("Transcript is empty.", target_lang or "en")
+
+    prompt = ChatPromptTemplate.from_messages([
+        ("system", "From transcript, write: Title; ≤6 key ingredients; 3–5 steps; 1 tip."),
+        ("human", "Target language: {lang}\n\nTranscript:\n{tx}")
+    ])
+    out = (prompt | ChatOpenAI(model=os.getenv("CHEF_BOT_MODEL", "gpt-4o-mini"), temperature=0)).invoke(
+        {"lang": target_lang or "en", "tx": raw_txt[:12000]}
+    )
+    summary = out.content.strip()
+
+    # Try to collect a few ingredients from the summary for follow-ups
+    ings = []
+    collect = False
+    for ln in summary.splitlines():
+        s = ln.strip()
+        if not s:
+            continue
+        if s.lower().startswith("key ingredients"):
+            collect = True
+            continue
+        if collect:
+            if s[:1] in "-•":
+                ings.append(s.lstrip("-• ").strip())
+            else:
+                break
+    ings = ings[:10]
+
+    # Cache a minimal hit so calories/shopping list flows work
+    _session_set_hits([{
+        "id": f"local:{p.stem}",
+        "title": (summary.splitlines()[0] or title).strip(),
+        "url": "",  # local file has no URL
+        "source": "local",
+        "ingredients": ings,
+        "ingredients_display": ings,
+        "steps": [],
+    }])
+
+    # Also upsert raw transcript into VS for future semantic search
+    try:
+        _upsert_transcript_into_vs(url="", title=title, transcript=raw_txt)
+    except Exception:
+        pass
+
+    return ensure_reply_language(summary, target_lang or "en")
 
 # ========= Nutrition =========
 class NutriArgs(BaseModel):

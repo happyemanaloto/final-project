@@ -1,0 +1,341 @@
+fdcId,name,name_norm,category,kcal_per_100g,protein_g_per_100g,fat_g_per_100g,carb_g_per_100g,fiber_g_per_100g,sugars_g_per_100g,sodium_mg_per_100g
+321358,"Hummus, commercial",hummus commercial,Legumes and Legume Products,229.0,7.35,17.1,14.9,5.4,0.34,438.0
+321360,"Tomatoes, grape, raw",tomatoes grape raw,Vegetables and Vegetable Products,27.0,0.83,0.63,5.51,2.1,,6.0
+321611,"Beans, snap, green, canned, regular pack, drained solids",beans snap green canned regular pack drained solids,Vegetables and Vegetable Products,21.0,1.04,0.39,4.11,,1.29,282.0
+323121,"Frankfurter, beef, unheated",frankfurter beef unheated,Sausages and Luncheon Meats,314.0,11.7,28.0,2.89,,1.26,872.0
+323294,"Nuts, almonds, dry roasted, with salt added",nuts almonds dry roasted with salt added,Nut and Seed Products,620.0,20.4,57.8,16.2,11.0,4.17,256.0
+323505,"Kale, raw",kale raw,Vegetables and Vegetable Products,35.0,2.92,1.49,4.42,4.1,0.8,53.0
+323604,"Egg, whole, raw, frozen, pasteurized",egg whole raw frozen pasteurized,Dairy and Egg Products,150.0,12.3,10.3,0.91,,,121.0
+323697,"Egg, white, raw, frozen, pasteurized",egg white raw frozen pasteurized,Dairy and Egg Products,48.0,10.1,0.16,0.74,,,144.0
+323793,"Egg, white, dried",egg white dried,Dairy and Egg Products,376.0,79.9,0.65,6.02,,,1250.0
+324317,"Onion rings, breaded, par fried, frozen, prepared, heated in oven",onion rings breaded par fried frozen prepared heated in oven,Vegetables and Vegetable Products,288.0,4.52,14.4,36.3,2.4,4.5,374.0
+324653,"Pickles, cucumber, dill or kosher dill",pickles cucumber dill or kosher dill,Vegetables and Vegetable Products,12.0,0.48,0.43,1.99,1.0,1.28,808.0
+325036,"Cheese, parmesan, grated",cheese parmesan grated,Dairy and Egg Products,421.0,29.6,28.0,12.4,,0.07,1750.0
+325198,"Cheese, pasteurized process, American, vitamin D fortified",cheese pasteurized process american vitamin d fortified,Dairy and Egg Products,366.0,18.0,30.6,5.27,,2.63,1660.0
+325287,"Grapefruit juice, white, canned or bottled, unsweetened",grapefruit juice white canned or bottled unsweetened,Fruits and Fruit Juices,37.0,0.55,0.7,7.59,0.2,7.72,1.0
+325430,"Peaches, yellow, raw",peaches yellow raw,Fruits and Fruit Juices,42.0,0.91,0.27,10.1,1.5,8.39,13.0
+325524,"Seeds, sunflower seed kernels, dry roasted, with salt added",seeds sunflower seed kernels dry roasted with salt added,Nut and Seed Products,612.0,21.0,56.1,17.1,10.3,3.14,532.0
+325871,"Bread, white, commercially prepared",bread white commercially prepared,Baked Products,270.0,9.43,3.59,49.2,2.3,5.34,477.0
+326196,"Kale, frozen, cooked, boiled, drained, without salt",kale frozen cooked boiled drained without salt,Vegetables and Vegetable Products,36.0,2.94,1.21,5.3,,1.12,16.0
+326698,"Mustard, prepared, yellow",mustard prepared yellow,Spices and Herbs,61.0,4.25,3.38,5.3,4.3,1.42,1100.0
+327046,"Kiwifruit, green, raw",kiwifruit green raw,Fruits and Fruit Juices,58.0,1.06,0.44,14.0,3.0,8.99,5.0
+327357,"Nectarines, raw",nectarines raw,Fruits and Fruit Juices,39.0,1.06,0.28,9.18,1.5,7.89,13.0
+328637,"Cheese, cheddar",cheese cheddar,Dairy and Egg Products,408.0,23.3,34.0,2.44,,0.33,654.0
+328841,"Cheese, cottage, lowfat, 2% milkfat",cheese cottage lowfat 2% milkfat,Dairy and Egg Products,84.0,11.0,2.3,4.31,,4.1,321.0
+329370,"Cheese, mozzarella, low moisture, part-skim",cheese mozzarella low moisture part-skim,Dairy and Egg Products,298.0,23.7,20.4,4.44,,1.81,699.0
+329490,"Egg, whole, dried",egg whole dried,Dairy and Egg Products,575.0,48.1,39.8,1.87,,,485.0
+329596,"Egg, yolk, raw, frozen, pasteurized",egg yolk raw frozen pasteurized,Dairy and Egg Products,296.0,15.6,25.1,0.59,,,66.0
+329716,"Egg, yolk, dried",egg yolk dried,Dairy and Egg Products,654.0,34.2,55.5,1.07,,,149.0
+330137,"Yogurt, Greek, plain, nonfat",yogurt greek plain nonfat,Dairy and Egg Products,61.0,10.3,0.37,3.64,,3.27,36.0
+330415,"Yogurt, Greek, strawberry, nonfat",yogurt greek strawberry nonfat,Dairy and Egg Products,83.0,8.06,0.15,12.2,0.6,11.5,32.0
+330458,"Oil, coconut",oil coconut,Fats and Oils,833.0,0.0,99.1,0.84,,,0.0
+331897,"Chicken, broilers or fryers, drumstick, meat only, cooked, braised",chicken broilers or fryers drumstick meat only cooked braised,Poultry Products,156.0,23.9,5.95,0.0,,,117.0
+331960,"Chicken, broiler or fryers, breast, skinless, boneless, meat only, cooked, braised",chicken broiler or fryers breast skinless boneless meat only cooked braised,Poultry Products,166.0,32.1,3.24,0.0,,,47.0
+332282,"Sauce, pasta, spaghetti/marinara, ready-to-serve",sauce pasta spaghetti/marinara ready-to-serve,"Soups, Sauces, and Gravies",45.0,1.41,1.48,8.05,1.8,5.5,419.0
+332397,"Ham, sliced, pre-packaged, deli meat (96%fat free, water added)",ham sliced pre-packaged deli meat 96%fat free water added,Sausages and Luncheon Meats,106.0,16.7,3.73,0.27,,,1040.0
+332791,"Olives, green, Manzanilla, stuffed with pimiento",olives green manzanilla stuffed with pimiento,Fruits and Fruit Juices,130.0,1.15,12.9,4.96,4.0,0.0,1620.0
+333008,"Cookies, oatmeal, soft, with raisins",cookies oatmeal soft with raisins,Baked Products,430.0,5.79,14.3,69.6,3.3,34.8,314.0
+333281,"Tomatoes, canned, red, ripe, diced",tomatoes canned red ripe diced,Vegetables and Vegetable Products,18.0,0.84,0.5,3.32,,2.99,125.0
+333374,"Fish, haddock, raw",fish haddock raw,Finfish and Shellfish Products,74.0,16.3,0.45,0.0,,,213.0
+333476,"Fish, pollock, raw",fish pollock raw,Finfish and Shellfish Products,56.0,12.3,0.41,0.0,,,333.0
+334194,"Fish, tuna, light, canned in water, drained solids",fish tuna light canned in water drained solids,Finfish and Shellfish Products,90.0,19.0,0.94,0.08,,0.0,219.0
+334536,"Restaurant, Chinese, fried rice, without meat",restaurant chinese fried rice without meat,Restaurant Foods,174.0,3.84,3.19,32.5,,0.62,361.0
+334628,"Restaurant, Latino, tamale, pork",restaurant latino tamale pork,Restaurant Foods,174.0,7.38,9.04,15.8,2.4,0.46,473.0
+334720,"Restaurant, Latino, pupusas con frijoles (pupusas, bean)",restaurant latino pupusas con frijoles pupusas bean,Restaurant Foods,229.0,5.59,9.01,31.5,5.8,1.3,305.0
+335240,"Bread, whole-wheat, commercially prepared",bread whole-wheat commercially prepared,Baked Products,254.0,12.3,3.55,43.1,6.0,4.41,450.0
+746758,"Beef, loin, tenderloin roast, separable lean only, boneless, trimmed to 0"" fat, select, cooked, roasted","beef loin tenderloin roast separable lean only boneless trimmed to 0"" fat select cooked roasted",Beef Products,176.0,27.7,6.36,0.0,,,54.0
+746759,"Beef, loin, top loin steak, boneless, lip-on, separable lean only, trimmed to 1/8"" fat, choice, raw","beef loin top loin steak boneless lip-on separable lean only trimmed to 1/8"" fat choice raw",Beef Products,155.0,22.8,6.39,0.0,,,45.0
+746760,"Beef, round, eye of round roast, boneless, separable lean only, trimmed to 0"" fat, select, raw","beef round eye of round roast boneless separable lean only trimmed to 0"" fat select raw",Beef Products,122.0,23.4,2.48,0.0,,,50.0
+746761,"Beef, round, top round roast, boneless, separable lean only, trimmed to 0"" fat, select, raw","beef round top round roast boneless separable lean only trimmed to 0"" fat select raw",Beef Products,123.0,23.7,2.41,0.0,,,55.0
+746762,"Beef, short loin, porterhouse steak, separable lean only, trimmed to 1/8"" fat, select, raw","beef short loin porterhouse steak separable lean only trimmed to 1/8"" fat select raw",Beef Products,145.0,22.7,5.32,0.0,,,43.0
+746763,"Beef, short loin, t-bone steak, bone-in, separable lean only, trimmed to 1/8"" fat, choice, cooked, grilled","beef short loin t-bone steak bone-in separable lean only trimmed to 1/8"" fat choice cooked grilled",Beef Products,219.0,27.3,11.4,0.0,,,67.0
+746764,"Carrots, frozen, unprepared",carrots frozen unprepared,Vegetables and Vegetable Products,37.0,0.81,0.47,7.92,3.2,4.2,66.0
+746765,"Cheese, dry white, queso seco",cheese dry white queso seco,Dairy and Egg Products,326.0,24.5,24.3,2.07,,0.43,1810.0
+746766,"Cheese, ricotta, whole milk",cheese ricotta whole milk,Dairy and Egg Products,157.0,7.81,11.0,6.86,,,105.0
+746767,"Cheese, swiss",cheese swiss,Dairy and Egg Products,393.0,27.0,31.0,1.44,,0.0,185.0
+746768,"Figs, dried, uncooked",figs dried uncooked,Fruits and Fruit Juices,249.0,3.3,0.92,63.9,9.8,47.9,10.0
+746769,"Lettuce, cos or romaine, raw",lettuce cos or romaine raw,Vegetables and Vegetable Products,17.0,1.24,0.26,3.24,1.8,1.19,
+746770,"Melons, cantaloupe, raw",melons cantaloupe raw,Fruits and Fruit Juices,34.0,0.82,0.18,8.16,0.8,7.88,30.0
+746771,"Oranges, raw, navels",oranges raw navels,Fruits and Fruit Juices,47.0,0.91,0.15,11.8,2.0,8.57,9.0
+746772,"Milk, lowfat, fluid, 1% milkfat, with added vitamin A and vitamin D",milk lowfat fluid 1% milkfat with added vitamin a and vitamin d,Dairy and Egg Products,43.0,3.38,0.95,5.18,,4.96,39.0
+746773,"Pears, raw, bartlett",pears raw bartlett,Fruits and Fruit Juices,57.0,0.38,0.16,15.1,3.1,9.69,7.0
+746774,"Restaurant, Chinese, sweet and sour pork",restaurant chinese sweet and sour pork,Restaurant Foods,260.0,8.88,13.6,25.5,1.0,10.3,304.0
+746775,"Salt, table, iodized",salt table iodized,Spices and Herbs,,,,,,,38700.0
+746776,"Milk, nonfat, fluid, with added vitamin A and vitamin D (fat free or skim)",milk nonfat fluid with added vitamin a and vitamin d fat free or skim,Dairy and Egg Products,34.0,3.43,0.08,4.92,,5.05,41.0
+746777,"Sauce, salsa, ready-to-serve",sauce salsa ready-to-serve,"Soups, Sauces, and Gravies",29.0,1.44,0.19,6.74,1.8,3.81,656.0
+746778,"Milk, reduced fat, fluid, 2% milkfat, with added vitamin A and vitamin D",milk reduced fat fluid 2% milkfat with added vitamin a and vitamin d,Dairy and Egg Products,50.0,3.36,1.9,4.9,,4.89,39.0
+746779,"Sausage, breakfast sausage, beef, pre-cooked, unprepared",sausage breakfast sausage beef pre-cooked unprepared,Sausages and Luncheon Meats,328.0,13.3,28.7,3.37,,1.0,866.0
+746780,"Sausage, Italian, pork, mild, cooked, pan-fried",sausage italian pork mild cooked pan-fried,Sausages and Luncheon Meats,322.0,18.2,26.2,2.15,,1.46,766.0
+746781,"Sausage, pork, chorizo, link or ground, cooked, pan-fried",sausage pork chorizo link or ground cooked pan-fried,Sausages and Luncheon Meats,346.0,19.3,28.1,2.63,,,983.0
+746782,"Milk, whole, 3.25% milkfat, with added vitamin D",milk whole 3.25% milkfat with added vitamin d,Dairy and Egg Products,60.0,3.27,3.2,4.63,,4.81,38.0
+746783,"Sausage, turkey, breakfast links, mild, raw",sausage turkey breakfast links mild raw,Sausages and Luncheon Meats,169.0,16.7,10.4,0.93,,,599.0
+746784,"Sugars, granulated",sugars granulated,Sweets,385.0,0.0,0.32,99.6,,99.8,1.0
+746785,"Turkey, ground, 93% lean, 7% fat, pan-broiled crumbles",turkey ground 93% lean 7% fat pan-broiled crumbles,Poultry Products,220.0,27.1,11.6,0.0,,,90.0
+746952,"Ham, sliced, restaurant",ham sliced restaurant,Pork Products,121.0,19.6,3.68,2.36,,2.2,1030.0
+747429,"Cheese, American, restaurant",cheese american restaurant,Dairy and Egg Products,375.0,17.5,31.1,6.35,,3.76,1600.0
+747430,"Beans, Dry, Medium Red (0% moisture)",beans dry medium red 0% moisture,Legumes and Legume Products,,25.5,1.04,,4.3,,
+747431,"Beans, Dry, Red (0% moisture)",beans dry red 0% moisture,Legumes and Legume Products,,21.3,1.16,,4.0,,
+747432,"Beans, Dry, Flor de Mayo (0% moisture)",beans dry flor de mayo 0% moisture,Legumes and Legume Products,,23.3,0.86,,4.0,,
+747433,"Beans, Dry, Brown (0% moisture)",beans dry brown 0% moisture,Legumes and Legume Products,,25.6,1.12,,4.1,,
+747434,"Beans, Dry, Tan (0% moisture)",beans dry tan 0% moisture,Legumes and Legume Products,,26.8,1.14,,4.4,,
+747435,"Beans, Dry, Light Tan (0% moisture)",beans dry light tan 0% moisture,Legumes and Legume Products,,24.6,1.28,,4.3,,
+747436,"Beans, Dry, Carioca (0% moisture)",beans dry carioca 0% moisture,Legumes and Legume Products,,25.2,1.44,,4.5,,
+747437,"Beans, Dry, Cranberry (0% moisture)",beans dry cranberry 0% moisture,Legumes and Legume Products,,24.4,1.23,,4.3,,
+747438,"Beans, Dry, Light Red Kidney (0% moisture)",beans dry light red kidney 0% moisture,Legumes and Legume Products,,25.0,1.03,,4.5,,
+747439,"Beans, Dry, Pink (0% moisture)",beans dry pink 0% moisture,Legumes and Legume Products,,23.4,1.2,,4.1,,
+747440,"Beans, Dry, Dark Red Kidney (0% moisture)",beans dry dark red kidney 0% moisture,Legumes and Legume Products,,25.9,1.31,,4.3,,
+747441,"Beans, Dry, Navy (0% moisture)",beans dry navy 0% moisture,Legumes and Legume Products,,24.1,1.51,,4.3,,
+747442,"Beans, Dry, Small White (0% moisture)",beans dry small white 0% moisture,Legumes and Legume Products,,24.5,1.32,,4.3,,
+747443,"Beans, Dry, Small Red (0% moisture)",beans dry small red 0% moisture,Legumes and Legume Products,,23.5,1.28,,4.1,,
+747444,"Beans, Dry, Black (0% moisture)",beans dry black 0% moisture,Legumes and Legume Products,,24.4,1.45,,4.2,,
+747445,"Beans, Dry, Pinto (0% moisture)",beans dry pinto 0% moisture,Legumes and Legume Products,,23.7,1.24,,4.1,,
+747446,"Beans, Dry, Great Northern (0% moisture)",beans dry great northern 0% moisture,Legumes and Legume Products,,24.7,1.24,,4.3,,
+747447,"Broccoli, raw",broccoli raw,Vegetables and Vegetable Products,31.0,2.57,0.34,6.27,2.4,1.4,36.0
+747693,"Ketchup, restaurant",ketchup restaurant,Vegetables and Vegetable Products,117.0,1.11,0.55,26.8,,21.8,949.0
+747997,"Eggs, Grade A, Large, egg white",eggs grade a large egg white,Dairy and Egg Products,55.0,10.7,0.0,2.36,,,
+748236,"Eggs, Grade A, Large, egg yolk",eggs grade a large egg yolk,Dairy and Egg Products,334.0,16.2,28.8,1.02,,,
+748278,"Oil, canola",oil canola,Fats and Oils,,,,,,,
+748323,"Oil, corn",oil corn,Fats and Oils,,,,,,,
+748366,"Oil, soybean",oil soybean,Fats and Oils,,,,,,,
+748608,"Oil, olive, extra virgin",oil olive extra virgin,Fats and Oils,,,,,,,
+748967,"Eggs, Grade A, Large, egg whole",eggs grade a large egg whole,Dairy and Egg Products,148.0,12.4,9.96,0.96,0.0,0.2,129.0
+749420,"Pork, cured, bacon, cooked, restaurant",pork cured bacon cooked restaurant,Pork Products,500.0,40.9,36.5,2.1,,3.14,1830.0
+789828,"Butter, stick, unsalted",butter stick unsalted,Dairy and Egg Products,,,81.5,,,,10.0
+789890,"Flour, wheat, all-purpose, enriched, bleached",flour wheat all-purpose enriched bleached,Cereal Grains and Pasta,366.0,10.9,1.48,77.3,,,2.0
+789951,"Flour, wheat, all-purpose, enriched, unbleached",flour wheat all-purpose enriched unbleached,Cereal Grains and Pasta,358.0,13.1,1.48,73.2,,,4.0
+790018,"Flour, wheat, all-purpose, unenriched, unbleached",flour wheat all-purpose unenriched unbleached,Cereal Grains and Pasta,362.0,12.0,1.7,74.6,3.0,,2.0
+790085,"Flour, whole wheat, unenriched",flour whole wheat unenriched,Cereal Grains and Pasta,370.0,15.1,2.73,71.2,10.6,,3.0
+790146,"Flour, bread, white, enriched, unbleached",flour bread white enriched unbleached,Cereal Grains and Pasta,363.0,14.3,1.65,72.8,,,3.0
+790214,"Flour, rice, white, unenriched",flour rice white unenriched,Cereal Grains and Pasta,359.0,6.94,1.3,79.8,0.5,,5.0
+790276,"Flour, corn, yellow, fine meal, enriched",flour corn yellow fine meal enriched,Cereal Grains and Pasta,364.0,6.2,1.74,80.8,4.3,1.04,0.0
+790508,"Butter, stick, salted",butter stick salted,Dairy and Egg Products,,,82.2,,,0.58,524.0
+790577,"Onions, red, raw",onions red raw,Vegetables and Vegetable Products,44.0,0.94,0.1,9.93,2.2,5.76,1.0
+790646,"Onions, yellow, raw",onions yellow raw,Vegetables and Vegetable Products,38.0,0.83,0.05,8.61,1.9,5.82,1.0
+1104647,"Garlic, raw",garlic raw,Vegetables and Vegetable Products,143.0,6.62,0.38,28.2,2.7,,
+1104705,"Flour, soy, defatted",flour soy defatted,Legumes and Legume Products,366.0,51.1,3.33,32.9,,,2.0
+1104766,"Flour, soy, full-fat",flour soy full-fat,Legumes and Legume Products,452.0,38.6,20.7,27.9,,,2.0
+1104812,"Flour, rice, brown",flour rice brown,Cereal Grains and Pasta,365.0,7.19,3.85,75.5,,,1.0
+1104867,"Flour, rice, glutinous",flour rice glutinous,Cereal Grains and Pasta,358.0,6.69,1.16,80.1,,,6.0
+1104913,"Flour, pastry, unenriched, unbleached",flour pastry unenriched unbleached,Cereal Grains and Pasta,358.0,8.75,1.64,77.2,,,1.0
+1104962,"Onions, white, raw",onions white raw,Vegetables and Vegetable Products,35.0,0.89,0.13,7.68,1.2,5.76,2.0
+1105073,"Bananas, overripe, raw",bananas overripe raw,Fruits and Fruit Juices,85.0,0.73,0.22,20.1,1.7,15.8,
+1105314,"Bananas, ripe and slightly ripe, raw",bananas ripe and slightly ripe raw,Fruits and Fruit Juices,97.0,0.74,0.29,23.0,1.7,15.8,0.0
+1750339,"Apples, red delicious, with skin, raw",apples red delicious with skin raw,Fruits and Fruit Juices,,0.188,0.212,14.8,2.04,12.2,0.0
+1750340,"Apples, fuji, with skin, raw",apples fuji with skin raw,Fruits and Fruit Juices,,0.148,0.162,15.7,2.08,13.3,1.01
+1750341,"Apples, gala, with skin, raw",apples gala with skin raw,Fruits and Fruit Juices,,0.133,0.15,14.8,2.11,11.8,0.279
+1750342,"Apples, granny smith, with skin, raw",apples granny smith with skin raw,Fruits and Fruit Juices,,0.266,0.138,14.1,2.51,10.7,0.0
+1750343,"Apples, honeycrisp, with skin, raw",apples honeycrisp with skin raw,Fruits and Fruit Juices,,0.102,0.1,14.7,1.72,12.4,0.138
+1750348,"Oil, peanut",oil peanut,Fats and Oils,,,,,,,
+1750349,"Oil, sunflower",oil sunflower,Fats and Oils,,,,,,,
+1750350,"Oil, safflower",oil safflower,Fats and Oils,,,,,,,
+1750351,"Oil, olive, extra light",oil olive extra light,Fats and Oils,,,,,,,
+1999626,"Mushroom, lion's mane",mushroom lion's mane,Vegetables and Vegetable Products,,2.5,0.256,7.59,4.38,,0.336
+1999627,"Mushroom, oyster",mushroom oyster,Vegetables and Vegetable Products,,2.9,0.188,6.94,2.85,,1.13
+1999628,"Mushrooms, shiitake",mushrooms shiitake,Vegetables and Vegetable Products,,2.41,0.195,8.17,4.17,,0.936
+1999629,"Mushrooms, white button",mushrooms white button,Vegetables and Vegetable Products,,2.89,0.371,4.08,1.72,,6.44
+1999630,"Soy milk, unsweetened, plain, shelf stable",soy milk unsweetened plain shelf stable,Legumes and Legume Products,,3.55,2.12,1.29,0.0,0.557,34.3
+1999631,"Almond milk, unsweetened, plain, shelf stable",almond milk unsweetened plain shelf stable,Beverages,,0.555,1.22,0.337,0.0,0.0,59.6
+1999632,"Spinach, baby",spinach baby,Vegetables and Vegetable Products,,2.85,0.619,2.41,1.56,,111.0
+1999633,"Spinach, mature",spinach mature,Vegetables and Vegetable Products,,2.91,0.604,2.64,1.59,,107.0
+1999634,"Tomato, roma",tomato roma,Vegetables and Vegetable Products,,0.696,0.425,3.84,0.971,,0.0
+2003586,"Flour, 00",flour 00,Cereal Grains and Pasta,,11.4,1.52,74.4,2.66,,0.0
+2003587,"Flour, spelt, whole grain",flour spelt whole grain,Cereal Grains and Pasta,,14.5,2.54,70.7,9.34,,0.0
+2003588,"Flour, semolina, coarse and semi-coarse",flour semolina coarse and semi-coarse,Cereal Grains and Pasta,,11.7,1.6,73.8,3.22,,0.0
+2003589,"Flour, semolina, fine",flour semolina fine,Cereal Grains and Pasta,,13.3,1.84,72.0,3.68,,0.426
+2003590,"Apple juice, with added vitamin C, from concentrate, shelf stable",apple juice with added vitamin c from concentrate shelf stable,Fruits and Fruit Juices,,0.086,0.286,11.4,,10.3,4.87
+2003591,"Orange juice, no pulp, not fortified, from concentrate, refrigerated",orange juice no pulp not fortified from concentrate refrigerated,Fruits and Fruit Juices,,0.734,0.325,10.3,,8.28,5.23
+2003592,"Grape juice, purple, with added vitamin C, from concentrate, shelf stable",grape juice purple with added vitamin c from concentrate shelf stable,Fruits and Fruit Juices,,0.258,0.288,15.6,,14.0,4.02
+2003593,"Grape juice, white, with added vitamin C, from concentrate, shelf stable",grape juice white with added vitamin c from concentrate shelf stable,Fruits and Fruit Juices,,0.094,0.265,15.8,,14.4,7.19
+2003594,"Cranberry juice, not fortified, from concentrate, shelf stable",cranberry juice not fortified from concentrate shelf stable,Fruits and Fruit Juices,,0.0,0.338,7.26,,3.41,6.34
+2003595,"Grapefruit juice, red, not fortified, not from concentrate, refrigerated",grapefruit juice red not fortified not from concentrate refrigerated,Fruits and Fruit Juices,,0.57,0.267,9.1,,7.12,1.03
+2003596,"Tomato juice, with added ingredients, from concentrate, shelf stable",tomato juice with added ingredients from concentrate shelf stable,Vegetables and Vegetable Products,,0.859,0.288,4.32,,2.57,236.0
+2003597,"Orange juice, no pulp, not fortified, not from concentrate, refrigerated",orange juice no pulp not fortified not from concentrate refrigerated,Fruits and Fruit Juices,,0.812,0.356,10.0,,8.08,0.075
+2003598,"Mushroom, portabella",mushroom portabella,Vegetables and Vegetable Products,,2.75,0.312,4.66,1.88,,5.31
+2003599,"Mushroom, king oyster",mushroom king oyster,Vegetables and Vegetable Products,,2.41,0.308,8.5,3.01,,0.771
+2003600,"Mushroom, enoki",mushroom enoki,Vegetables and Vegetable Products,,2.42,0.245,8.14,2.94,,0.417
+2003601,"Mushroom, crimini",mushroom crimini,Vegetables and Vegetable Products,,3.09,0.197,4.01,1.78,,4.57
+2003602,"Mushroom, maitake",mushroom maitake,Vegetables and Vegetable Products,,2.2,0.265,6.6,3.07,,0.345
+2003603,"Mushroom, beech",mushroom beech,Vegetables and Vegetable Products,,2.18,0.449,6.76,3.14,,0.891
+2003604,"Mushroom, pioppini",mushroom pioppini,Vegetables and Vegetable Products,,3.5,0.24,5.76,2.75,,0.0
+2257044,"Soy milk, sweetened, plain, refrigerated",soy milk sweetened plain refrigerated,Legumes and Legume Products,,2.78,1.96,3.0,0.0,,39.4
+2257045,"Almond milk, unsweetened, plain, refrigerated",almond milk unsweetened plain refrigerated,Beverages,,0.656,1.56,0.671,0.0,,59.2
+2257046,"Oat milk, unsweetened, plain, refrigerated",oat milk unsweetened plain refrigerated,Beverages,,0.797,2.75,5.1,0.0,2.32,42.0
+2258586,"Carrots, mature, raw",carrots mature raw,Vegetables and Vegetable Products,,0.941,0.351,10.3,3.1,,86.6
+2258587,"Carrots, baby, raw",carrots baby raw,Vegetables and Vegetable Products,,0.805,0.138,9.08,2.69,,62.7
+2258588,"Peppers, bell, green, raw",peppers bell green raw,Vegetables and Vegetable Products,,0.715,0.106,4.78,0.942,,0.0
+2258589,"Peppers, bell, yellow, raw",peppers bell yellow raw,Vegetables and Vegetable Products,,0.819,0.121,6.6,1.07,,0.0
+2258590,"Peppers, bell, red, raw",peppers bell red raw,Vegetables and Vegetable Products,,0.896,0.126,6.65,1.16,,0.0
+2258591,"Peppers, bell, orange, raw",peppers bell orange raw,Vegetables and Vegetable Products,,0.882,0.156,6.7,0.967,,0.0
+2259792,"Buttermilk, low fat",buttermilk low fat,Dairy and Egg Products,,3.46,1.08,4.81,,,92.5
+2259793,"Yogurt, plain, whole milk",yogurt plain whole milk,Dairy and Egg Products,,3.82,4.48,5.57,,4.09,41.8
+2259794,"Yogurt, Greek, plain, whole milk",yogurt greek plain whole milk,Dairy and Egg Products,,8.78,4.39,4.75,,3.25,33.8
+2259795,"Cheese, parmesan, grated, refrigerated",cheese parmesan grated refrigerated,Dairy and Egg Products,,30.1,29.5,4.33,,0.638,1050.0
+2259796,"Cheese, feta, whole milk, crumbled",cheese feta whole milk crumbled,Dairy and Egg Products,,19.7,19.1,5.58,,1.63,1030.0
+2261420,"Flour, almond",flour almond,Nut and Seed Products,,26.2,50.2,16.2,9.27,,0.894
+2261421,"Flour, oat, whole grain",flour oat whole grain,Cereal Grains and Pasta,,13.2,6.31,69.9,10.5,,3.62
+2261422,"Flour, potato",flour potato,Vegetables and Vegetable Products,,8.11,0.951,79.9,5.4,,47.7
+2262072,"Peanut butter, creamy",peanut butter creamy,Legumes and Legume Products,,24.0,49.4,22.7,6.32,,221.0
+2262073,"Sesame butter, creamy",sesame butter creamy,Nut and Seed Products,,19.7,62.4,14.2,8.37,,63.6
+2262074,"Almond butter, creamy",almond butter creamy,Nut and Seed Products,,20.8,53.0,21.2,9.72,,0.996
+2262075,"Flaxseed, ground",flaxseed ground,Nut and Seed Products,,18.0,37.3,34.4,23.1,,36.7
+2346384,"Cottage cheese, full fat, large or small curd",cottage cheese full fat large or small curd,Dairy and Egg Products,,11.6,4.22,4.6,,,350.0
+2346385,"Cream cheese, full fat, block",cream cheese full fat block,Dairy and Egg Products,,5.79,33.5,4.56,,,368.0
+2346386,"Cream, heavy",cream heavy,Dairy and Egg Products,,2.02,35.6,3.8,,,20.6
+2346387,"Cream, sour, full fat",cream sour full fat,Dairy and Egg Products,,3.07,18.0,5.56,,,50.0
+2346388,"Lettuce, iceberg, raw",lettuce iceberg raw,Vegetables and Vegetable Products,,0.742,0.074,3.37,,,16.1
+2346389,"Lettuce, romaine, green, raw",lettuce romaine green raw,Vegetables and Vegetable Products,,0.977,0.071,4.06,,,23.0
+2346390,"Lettuce, leaf, red, raw",lettuce leaf red raw,Vegetables and Vegetable Products,,0.883,0.106,3.26,,,24.9
+2346391,"Lettuce, leaf, green, raw",lettuce leaf green raw,Vegetables and Vegetable Products,,1.09,0.156,4.07,,,28.9
+2346392,"Nuts, pine nuts, raw",nuts pine nuts raw,Nut and Seed Products,,15.7,61.3,18.6,3.94,,0.0
+2346393,"Nuts, almonds, whole, raw",nuts almonds whole raw,Nut and Seed Products,,21.5,51.1,20.0,10.8,,0.0
+2346394,"Nuts, walnuts, English, halves, raw",nuts walnuts english halves raw,Nut and Seed Products,,14.6,69.7,10.9,5.21,,0.0
+2346395,"Nuts, pecans, halves, raw",nuts pecans halves raw,Nut and Seed Products,,9.96,73.3,12.7,5.79,,0.0
+2346396,"Oats, whole grain, rolled, old fashioned",oats whole grain rolled old fashioned,Cereal Grains and Pasta,,13.5,5.89,68.7,,,0.668
+2346397,"Oats, whole grain, steel cut",oats whole grain steel cut,Cereal Grains and Pasta,,12.5,5.8,69.8,,,0.311
+2346398,"Pineapple, raw",pineapple raw,Fruits and Fruit Juices,,0.461,0.211,14.1,0.935,11.4,0.0
+2346399,"Cherries, sweet, dark red, raw",cherries sweet dark red raw,Fruits and Fruit Juices,,1.04,0.192,16.2,,13.9,0.0
+2346400,"Beans, snap, green, raw",beans snap green raw,Vegetables and Vegetable Products,,1.97,0.275,7.41,3.01,2.33,0.0
+2346401,"Potatoes, russet, without skin, raw",potatoes russet without skin raw,Vegetables and Vegetable Products,,2.27,0.36,17.8,,0.526,2.74
+2346402,"Potatoes, red, without skin, raw",potatoes red without skin raw,Vegetables and Vegetable Products,,2.06,0.248,16.3,,0.664,2.86
+2346403,"Potatoes, gold, without skin, raw",potatoes gold without skin raw,Vegetables and Vegetable Products,,1.81,0.264,16.0,,0.645,2.24
+2346404,"Sweet potatoes, orange flesh, without skin, raw",sweet potatoes orange flesh without skin raw,Vegetables and Vegetable Products,,1.58,0.375,17.3,,6.06,0.0
+2346405,"Celery, raw",celery raw,Vegetables and Vegetable Products,,0.492,0.162,3.32,,,97.2
+2346406,"Cucumber, with peel, raw",cucumber with peel raw,Vegetables and Vegetable Products,,0.625,0.178,2.95,,,1.52
+2346407,"Cabbage, green, raw",cabbage green raw,Vegetables and Vegetable Products,,0.961,0.228,6.38,,,16.1
+2346408,"Cabbage, red, raw",cabbage red raw,Vegetables and Vegetable Products,,1.24,0.214,6.79,,,11.7
+2346409,"Strawberries, raw",strawberries raw,Fruits and Fruit Juices,,0.641,0.22,7.96,,4.86,0.0
+2346410,"Raspberries, raw",raspberries raw,Fruits and Fruit Juices,,1.01,0.188,12.9,,2.68,0.0
+2346411,"Blueberries, raw",blueberries raw,Fruits and Fruit Juices,,0.703,0.306,14.6,,9.36,0.0
+2346412,"Grapes, red, seedless, raw",grapes red seedless raw,Fruits and Fruit Juices,,0.914,0.164,20.2,,17.3,7.0
+2346413,"Grapes, green, seedless, raw",grapes green seedless raw,Fruits and Fruit Juices,,0.899,0.232,18.6,,16.1,3.17
+2346414,"Applesauce, unsweetened, with added vitamin C",applesauce unsweetened with added vitamin c,Fruits and Fruit Juices,,0.273,0.162,12.3,,9.66,0.504
+2512371,"Flour, amaranth",flour amaranth,Cereal Grains and Pasta,,13.2,6.24,68.8,7.21,,0.0
+2512372,"Flour, quinoa",flour quinoa,Cereal Grains and Pasta,,11.9,6.6,69.5,6.3,,6.32
+2512373,"Flour, sorghum",flour sorghum,Cereal Grains and Pasta,,8.27,3.59,77.4,6.02,,0.0
+2512374,"Flour, buckwheat",flour buckwheat,Cereal Grains and Pasta,,8.88,2.48,75.0,10.4,,0.0
+2512375,"Flour, rye",flour rye,Cereal Grains and Pasta,,8.4,1.91,77.2,13.7,,0.0
+2512376,"Flour, barley",flour barley,Cereal Grains and Pasta,,8.72,2.45,77.4,12.8,,20.3
+2512377,"Flour, cassava",flour cassava,Vegetables and Vegetable Products,,0.918,0.494,87.3,4.83,,13.1
+2512378,"Buckwheat, whole grain",buckwheat whole grain,Cereal Grains and Pasta,,11.1,3.04,71.1,4.05,,0.0
+2512379,"Millet, whole grain",millet whole grain,Cereal Grains and Pasta,,10.0,4.19,74.4,2.62,,0.0
+2512380,"Rice, brown, long grain, unenriched, raw",rice brown long grain unenriched raw,Cereal Grains and Pasta,,7.25,3.31,76.7,3.02,,0.0
+2512381,"Rice, white, long grain, unenriched, raw",rice white long grain unenriched raw,Cereal Grains and Pasta,,7.04,1.03,80.3,0.149,,0.462
+2514743,"Beef, ground, 90% lean meat / 10% fat, raw",beef ground 90% lean meat / 10% fat raw,Beef Products,,18.2,12.8,0.0,,,61.6
+2514744,"Beef, ground, 80% lean meat / 20% fat, raw",beef ground 80% lean meat / 20% fat raw,Beef Products,,17.5,19.4,0.0,,,54.9
+2514745,"Pork, ground, raw",pork ground raw,Pork Products,,17.8,17.5,0.0,,,53.6
+2514746,"Chicken, ground, with additives, raw",chicken ground with additives raw,Poultry Products,,17.9,7.16,0.0,,,63.0
+2514747,"Turkey, ground, 93% lean/ 7% fat, raw",turkey ground 93% lean/ 7% fat raw,Poultry Products,,17.3,9.59,0.0,,,80.2
+2515373,"Nuts, brazilnuts, raw",nuts brazilnuts raw,Nut and Seed Products,,15.0,57.4,21.6,5.98,,0.0
+2515374,"Nuts, cashew nuts, raw",nuts cashew nuts raw,Nut and Seed Products,,17.4,38.9,36.3,4.1,,4.76
+2515375,"Nuts, hazelnuts or filberts, raw",nuts hazelnuts or filberts raw,Nut and Seed Products,,13.5,53.5,26.5,8.41,,0.0
+2515376,"Peanuts, raw",peanuts raw,Legumes and Legume Products,,23.2,43.3,26.5,8.01,,1.49
+2515377,"Flour, chestnut",flour chestnut,Nut and Seed Products,,5.29,4.64,80.5,8.71,,0.0
+2515378,"Nuts, macadamia nuts, raw",nuts macadamia nuts raw,Nut and Seed Products,,7.79,64.9,24.1,7.56,,0.0
+2515379,"Nuts, pistachio nuts, raw",nuts pistachio nuts raw,Nut and Seed Products,,20.5,45.0,27.7,6.97,,0.0
+2515380,"Seeds, pumpkin seeds (pepitas), raw",seeds pumpkin seeds pepitas raw,Nut and Seed Products,,29.9,40.0,18.7,5.08,,0.0
+2515381,"Seeds, sunflower seed, kernel, raw",seeds sunflower seed kernel raw,Nut and Seed Products,,18.9,48.4,24.5,7.22,,0.0
+2515382,"Flour, coconut",flour coconut,Nut and Seed Products,,16.1,15.3,58.9,34.2,,46.9
+2644281,"Beans, cannellini, dry",beans cannellini dry,Legumes and Legume Products,,21.6,2.2,59.8,,,0.0
+2644282,"Chickpeas, (garbanzo beans, bengal gram), dry",chickpeas garbanzo beans bengal gram dry,Legumes and Legume Products,,21.3,6.27,60.4,,,8.78
+2644283,"Lentils, dry",lentils dry,Legumes and Legume Products,,23.6,1.92,62.2,,,0.0
+2644284,"Blackeye pea, dry",blackeye pea dry,Legumes and Legume Products,,21.2,2.42,61.8,,,3.46
+2644285,"Beans, black, canned, sodium added, drained and rinsed",beans black canned sodium added drained and rinsed,Legumes and Legume Products,,6.91,1.27,19.8,,,218.0
+2644286,"Beans, navy, canned, sodium added, drained and rinsed",beans navy canned sodium added drained and rinsed,Legumes and Legume Products,,6.57,1.4,20.0,,,190.0
+2644287,"Beans, cannellini, canned, sodium added, drained and rinsed",beans cannellini canned sodium added drained and rinsed,Legumes and Legume Products,,7.41,1.17,18.8,,,164.0
+2644288,"Chickpeas (garbanzo beans, bengal gram), canned, sodium added, drained and rinsed",chickpeas garbanzo beans bengal gram canned sodium added drained and rinsed,Legumes and Legume Products,,7.02,3.1,20.3,,,202.0
+2644289,"Beans, kidney, dark red, canned, sodium added, sugar added, drained and rinsed",beans kidney dark red canned sodium added sugar added drained and rinsed,Legumes and Legume Products,,7.8,1.26,21.0,,,172.0
+2644290,"Beans, kidney, light red, canned, sodium added, sugar added, drained and rinsed",beans kidney light red canned sodium added sugar added drained and rinsed,Legumes and Legume Products,,7.31,1.3,21.4,,,158.0
+2644291,"Peas, green, sweet, canned, sodium added, sugar added, drained and rinsed",peas green sweet canned sodium added sugar added drained and rinsed,Vegetables and Vegetable Products,,4.73,1.15,12.7,,,207.0
+2644292,"Beans, pinto, canned, sodium added, drained and rinsed",beans pinto canned sodium added drained and rinsed,Legumes and Legume Products,,6.69,1.27,19.6,,,202.0
+2644293,"Blackeye pea, canned, sodium added, drained and rinsed",blackeye pea canned sodium added drained and rinsed,Legumes and Legume Products,,6.92,1.3,19.2,,,227.0
+2644294,"Beans, great northern, canned, sodium added, drained and rinsed",beans great northern canned sodium added drained and rinsed,Legumes and Legume Products,,7.03,1.27,19.3,,,223.0
+2646168,"Pork, loin, boneless, raw",pork loin boneless raw,Pork Products,,21.1,9.47,0.0,,,40.2
+2646169,"Pork, loin, tenderloin, boneless, raw",pork loin tenderloin boneless raw,Pork Products,,21.6,3.9,0.0,,,41.4
+2646170,"Chicken, breast, boneless, skinless, raw",chicken breast boneless skinless raw,Poultry Products,,22.5,1.93,0.0,,,65.8
+2646171,"Chicken, thigh, boneless, skinless, raw",chicken thigh boneless skinless raw,Poultry Products,,18.6,7.92,0.0,,,62.3
+2646172,"Beef, ribeye, steak, boneless, choice, raw",beef ribeye steak boneless choice raw,Beef Products,,18.7,20.0,0.0,,,42.5
+2646173,"Beef, round, top round, boneless, choice, raw",beef round top round boneless choice raw,Beef Products,,21.5,5.7,0.852,,,45.5
+2646174,"Beef, chuck, roast, boneless, choice, raw",beef chuck roast boneless choice raw,Beef Products,,18.4,17.8,0.0,,,48.4
+2646175,"Beef, flank, steak, boneless, choice, raw",beef flank steak boneless choice raw,Beef Products,,20.1,9.4,0.0,,,51.3
+2647437,"Yogurt, plain, nonfat",yogurt plain nonfat,Dairy and Egg Products,,4.23,0.087,8.08,,,51.5
+2647438,"Cheese, monterey jack, solid",cheese monterey jack solid,Dairy and Egg Products,,22.6,32.6,1.9,,,662.0
+2647439,"Cheese, pasteurized process cheese food or product, American, singles",cheese pasteurized process cheese food or product american singles,Dairy and Egg Products,,15.6,23.9,8.19,,,1420.0
+2647440,"Cheese, provolone, sliced",cheese provolone sliced,Dairy and Egg Products,,23.5,28.1,2.45,,,601.0
+2647441,"Cheese, oaxaca, solid",cheese oaxaca solid,Dairy and Egg Products,,22.1,22.1,2.4,,,734.0
+2647442,"Cheese, queso fresco, solid",cheese queso fresco solid,Dairy and Egg Products,,18.9,23.4,2.96,,,626.0
+2647443,"Cheese, cotija, solid",cheese cotija solid,Dairy and Egg Products,,23.8,27.2,2.72,,,1620.0
+2684440,"Fish, salmon, sockeye, wild caught, raw",fish salmon sockeye wild caught raw,Finfish and Shellfish Products,,22.3,4.94,0.0,,,53.3
+2684441,"Fish, salmon, Atlantic, farm raised, raw",fish salmon atlantic farm raised raw,Finfish and Shellfish Products,,20.3,13.1,0.0,,,49.5
+2684442,"Fish, tilapia, farm raised, raw",fish tilapia farm raised raw,Finfish and Shellfish Products,,19.0,2.48,0.0,,,93.7
+2684443,"Crustaceans, shrimp, farm raised, raw",crustaceans shrimp farm raised raw,Finfish and Shellfish Products,,15.6,0.801,0.485,,,475.0
+2684444,"Fish, cod, Atlantic, wild caught, raw",fish cod atlantic wild caught raw,Finfish and Shellfish Products,,16.1,0.668,0.0,,,299.0
+2684445,"Fish, catfish, farm raised, raw",fish catfish farm raised raw,Finfish and Shellfish Products,,16.5,7.31,0.0,,,60.5
+2684446,"Crustaceans, crab, blue swimming, lump, pasteurized, refrigerated",crustaceans crab blue swimming lump pasteurized refrigerated,Finfish and Shellfish Products,,18.6,0.808,0.0,,,331.0
+2685568,"Squash, summer, green, zucchini, includes skin, raw",squash summer green zucchini includes skin raw,Vegetables and Vegetable Products,,0.984,0.205,3.27,0.752,,0.0
+2685569,"Squash, summer, yellow, includes skin, raw",squash summer yellow includes skin raw,Vegetables and Vegetable Products,,0.891,0.135,4.39,0.956,,0.0
+2685570,"Squash, winter, butternut, raw",squash winter butternut raw,Vegetables and Vegetable Products,,1.15,0.168,10.5,1.96,,0.0
+2685571,"Squash, winter, acorn, raw",squash winter acorn raw,Vegetables and Vegetable Products,,1.25,0.182,10.5,2.64,,0.0
+2685572,"Cabbage, bok choy, raw",cabbage bok choy raw,Vegetables and Vegetable Products,,1.02,0.234,3.51,1.26,,14.3
+2685573,"Cauliflower, raw",cauliflower raw,Vegetables and Vegetable Products,,1.64,0.238,4.72,1.95,,20.0
+2685574,"Collards, raw",collards raw,Vegetables and Vegetable Products,,2.97,0.77,7.02,3.82,,18.4
+2685575,"Brussels sprouts, raw",brussels sprouts raw,Vegetables and Vegetable Products,,3.98,0.565,9.62,4.78,,25.7
+2685576,"Beets, raw",beets raw,Vegetables and Vegetable Products,,1.69,0.302,8.79,3.12,5.1,112.0
+2685577,"Eggplant, raw",eggplant raw,Vegetables and Vegetable Products,,0.852,0.12,5.4,2.45,2.35,0.442
+2685578,"Tomatoes, whole, canned, solids and liquids, with salt added",tomatoes whole canned solids and liquids with salt added,Vegetables and Vegetable Products,,0.868,0.206,4.29,0.872,2.61,112.0
+2685579,"Tomato, sauce, canned, with salt added",tomato sauce canned with salt added,Vegetables and Vegetable Products,,1.35,0.382,6.33,1.64,3.52,417.0
+2685580,"Tomato, paste, canned, without salt added",tomato paste canned without salt added,Vegetables and Vegetable Products,,4.23,0.732,20.2,4.7,11.7,61.2
+2685581,"Tomatoes, crushed, canned",tomatoes crushed canned,Vegetables and Vegetable Products,,1.44,0.398,7.14,1.94,3.74,140.0
+2685582,"Tomato, puree, canned",tomato puree canned,Vegetables and Vegetable Products,,1.58,0.265,8.04,1.97,4.31,29.4
+2710815,"Apricot, with skin, raw",apricot with skin raw,Fruits and Fruit Juices,,0.961,0.405,10.2,1.51,6.25,0.0
+2710816,"Melons, honeydew, raw",melons honeydew raw,Fruits and Fruit Juices,,0.531,0.216,8.15,,7.03,21.2
+2710817,"Plantains, ripe, raw",plantains ripe raw,Fruits and Fruit Juices,,1.16,0.893,31.0,2.12,14.2,0.0
+2710818,"Plantains, underripe, raw",plantains underripe raw,Fruits and Fruit Juices,,1.23,0.685,33.6,2.53,2.41,0.0
+2710819,"Chia seeds, dry, raw",chia seeds dry raw,Cereal Grains and Pasta,,17.0,32.9,38.3,,,0.0
+2710820,"Bulgur, dry, raw",bulgur dry raw,Cereal Grains and Pasta,,11.8,2.42,75.9,11.7,,2.18
+2710821,"Wild rice, dry, raw",wild rice dry raw,Cereal Grains and Pasta,,12.8,1.7,75.7,4.26,,1.01
+2710822,"Arugula, baby, raw",arugula baby raw,Vegetables and Vegetable Products,,1.65,0.325,5.37,2.28,,86.9
+2710823,"Asparagus, green, raw",asparagus green raw,Vegetables and Vegetable Products,,1.44,0.216,5.1,1.88,,2.46
+2710824,"Avocado, Hass, peeled, raw",avocado hass peeled raw,Fruits and Fruit Juices,,1.81,20.3,8.32,,,0.0
+2710825,"Rice, black, unenriched, raw",rice black unenriched raw,Cereal Grains and Pasta,,7.57,3.44,77.2,4.18,,0.0
+2710826,"Corn, sweet, yellow and white kernels,  fresh, raw",corn sweet yellow and white kernels fresh raw,Vegetables and Vegetable Products,,2.79,1.63,14.7,2.43,7.37,0.0
+2710827,"Einkorn, grain, dry, raw",einkorn grain dry raw,Cereal Grains and Pasta,,15.1,3.81,68.7,8.91,,0.0
+2710828,"Farro, pearled, dry, raw",farro pearled dry raw,Cereal Grains and Pasta,,12.6,3.1,72.1,7.31,,0.845
+2710829,"Fonio, grain, dry, raw",fonio grain dry raw,Cereal Grains and Pasta,,7.17,1.69,81.3,2.2,,2.97
+2710830,"Khorasan, grain, dry, raw",khorasan grain dry raw,Cereal Grains and Pasta,,14.8,2.8,71.8,10.5,,3.94
+2710831,"Kiwifruit (kiwi), green, peeled, raw",kiwifruit kiwi green peeled raw,Fruits and Fruit Juices,,1.01,0.64,13.8,2.13,8.56,2.28
+2710832,"Mandarin, seedless, peeled, raw",mandarin seedless peeled raw,Fruits and Fruit Juices,,1.04,0.458,13.4,1.33,9.12,0.0
+2710833,"Mango, Tommy Atkins, peeled, raw",mango tommy atkins peeled raw,Fruits and Fruit Juices,,0.562,0.572,15.3,1.75,10.7,0.0
+2710834,"Mango, Ataulfo, peeled, raw",mango ataulfo peeled raw,Fruits and Fruit Juices,,0.688,0.681,17.4,1.29,11.1,0.0
+2710835,"Corn flour, masa harina, white or yellow, dry, raw",corn flour masa harina white or yellow dry raw,Cereal Grains and Pasta,,7.56,4.34,76.7,7.04,,2.73
+2710836,"Pear, Anjou, green, with skin, raw",pear anjou green with skin raw,Fruits and Fruit Juices,,0.312,0.371,14.8,2.64,7.8,0.398
+2710837,"Plum, black, with skin, raw",plum black with skin raw,Fruits and Fruit Juices,,0.578,0.282,13.5,1.35,7.96,0.0
+2710838,"Rice, red, unenriched, dry, raw",rice red unenriched dry raw,Cereal Grains and Pasta,,8.56,3.44,76.2,4.2,,0.438
+2710839,"Sorghum bran, white, unenriched, dry, raw",sorghum bran white unenriched dry raw,Cereal Grains and Pasta,,11.2,9.26,68.7,35.0,,2.92
+2710840,"Sorghum flour, white, pearled, unenriched, dry, raw",sorghum flour white pearled unenriched dry raw,Cereal Grains and Pasta,,10.2,3.24,73.5,3.3,,0.0
+2710841,"Sorghum grain, white, pearled, unenriched, dry, raw",sorghum grain white pearled unenriched dry raw,Cereal Grains and Pasta,,10.2,3.26,74.9,3.92,,0.0
+2710842,"Sorghum, whole grain, white, dry, raw",sorghum whole grain white dry raw,Cereal Grains and Pasta,,10.1,4.22,73.6,8.27,,0.329
+2710843,"Plantains, overripe, raw",plantains overripe raw,Fruits and Fruit Juices,,1.17,0.99,29.2,1.79,19.2,0.0
+2727566,"Chicken, drumstick, meat and skin, raw",chicken drumstick meat and skin raw,Poultry Products,,18.4,5.94,-0.475,,,91.0
+2727567,"Chicken, thigh, meat and skin, raw",chicken thigh meat and skin raw,Poultry Products,,17.1,13.4,-0.173,,,63.6
+2727568,"Chicken, wing, meat and skin, raw",chicken wing meat and skin raw,Poultry Products,,18.4,10.6,-0.459,,,84.1
+2727569,"Chicken, breast, meat and skin, raw",chicken breast meat and skin raw,Poultry Products,,21.4,4.78,-0.428,,,48.1
+2727570,"Lamb, ground, raw",lamb ground raw,"Lamb, Veal, and Game Products",,17.5,18.6,-0.251,,,53.4
+2727571,"Bison, ground, raw",bison ground raw,"Lamb, Veal, and Game Products",,19.9,8.88,-0.15,,,55.7
+2727572,"Beef, short loin (NY strip steak), raw",beef short loin ny strip steak raw,Beef Products,,21.3,11.5,0.221,,,43.1
+2727573,"Beef, tenderloin steak, raw",beef tenderloin steak raw,Beef Products,,21.1,6.46,0.18,,,44.8
+2727574,"Beef, top sirloin steak, raw",beef top sirloin steak raw,Beef Products,,22.0,5.71,0.218,,,42.8
+2727575,"Pork, chop, center cut, raw",pork chop center cut raw,Pork Products,,22.8,5.48,-0.562,,,39.3
+2727576,"Pork, belly, with skin, raw",pork belly with skin raw,Pork Products,,15.2,35.8,-0.705,,,49.7
+2727577,"Pawpaw, peeled, seeded, raw",pawpaw peeled seeded raw,Fruits and Fruit Juices,,1.15,,,,14.1,0.351
+2727578,"Squash, pie pumpkin, peeled, seeded, raw",squash pie pumpkin peeled seeded raw,Vegetables and Vegetable Products,,0.854,,,,4.14,0.312
+2727579,"Squash, spaghetti, peeled, seeded, raw",squash spaghetti peeled seeded raw,Vegetables and Vegetable Products,,0.792,,,,4.01,0.312
+2727580,"Rutabaga, peeled, raw",rutabaga peeled raw,Vegetables and Vegetable Products,,0.888,,,,6.01,4.59
+2727581,"Blackberries, raw",blackberries raw,Fruits and Fruit Juices,,1.53,,,,6.52,1.55
+2727582,"Tomatillos, dehusked, raw",tomatillos dehusked raw,Vegetables and Vegetable Products,,1.06,,,,2.87,0.311
+2727583,"Cabbage, napa, leaf, destemmed, raw",cabbage napa leaf destemmed raw,Vegetables and Vegetable Products,,1.06,,,,2.77,12.6
+2727584,"Leeks, bulb and greens, root removed, raw",leeks bulb and greens root removed raw,Vegetables and Vegetable Products,,1.47,,,,3.15,17.7
+2727585,"Green onion, (scallion), bulb and greens, root removed, raw",green onion scallion bulb and greens root removed raw,Vegetables and Vegetable Products,,0.669,,,,2.62,9.95
+2727586,"Shallots, bulb, peeled, root removed, raw",shallots bulb peeled root removed raw,Vegetables and Vegetable Products,,1.38,,,,4.35,3.64
+2727587,"Juice, prune, shelf-stable",juice prune shelf-stable,Fruits and Fruit Juices,,0.423,,,,14.8,10.3
+2727588,"Juice, pomegranate, from concentrate, shelf-stable",juice pomegranate from concentrate shelf-stable,Fruits and Fruit Juices,,0.0,,,,13.3,4.04
+2727589,"Juice, tart cherry, from concentrate, shelf-stable",juice tart cherry from concentrate shelf-stable,Fruits and Fruit Juices,,0.147,,,,10.9,1.36

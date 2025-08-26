@@ -1,5 +1,4 @@
 import argparse, os, sys, traceback
-from bot.voice_sanity import record_to_wav, transcribe_whisper, tts_say
 
 print("[kusina_app] starting…")  # <-- loud
 print("[kusina_app] sys.executable:", sys.executable)
@@ -25,24 +24,8 @@ def main():
     ap.add_argument("--voice", action="store_true")
     ap.add_argument("--mic-index", type=int, default=None)
     ap.add_argument("--samplerate", type=int, default=16000)
-    ap.add_argument("--mic-demo", action="store_true", help="Record mic and transcribe (sanity check).")
-    ap.add_argument("--lang", type=str, default=None, help="Language hint for transcription.")
-
     args = ap.parse_args()
     print("[kusina_app] args:", args)
-
-        # Quick mic sanity (optional path)
-    if args.mic_demo:
-        print("Listing/recording via voice_sanity helpers…")
-        wav = record_to_wav(seconds=6, samplerate=args.samplerate, mic_index=args.mic_index)
-        text = transcribe_whisper(wav, model_name="small.en", language=args.lang)
-        print("\n=== Transcript ===\n", text)
-        if text:
-            try:
-                tts_say(text, lang_hint=(args.lang or "en"))
-            except Exception:
-                pass
-        return
 
     try:
         run_cli(

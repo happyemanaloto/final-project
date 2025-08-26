@@ -1,0 +1,122 @@
+fdcId,name,name_norm,label,gram_weight,kcal_per_portion,measure_unit,amount,modifier,category
+321358,"Hummus, commercial",hummus commercial,2.0 tablespoon,33.9,77.63,tablespoon,2.0,,Legumes and Legume Products
+321360,"Tomatoes, grape, raw",tomatoes grape raw,5.0 tomatoes,49.7,13.42,tomatoes,5.0,,Vegetables and Vegetable Products
+321360,"Tomatoes, grape, raw",tomatoes grape raw,1.0 cup,152.0,41.04,cup,1.0,,Vegetables and Vegetable Products
+321611,"Beans, snap, green, canned, regular pack, drained solids",beans snap green canned regular pack drained solids,1.0 cup drained,129.0,27.09,cup,1.0,drained,Vegetables and Vegetable Products
+323121,"Frankfurter, beef, unheated",frankfurter beef unheated,1.0 piece,48.6,152.6,piece,1.0,,Sausages and Luncheon Meats
+323294,"Nuts, almonds, dry roasted, with salt added",nuts almonds dry roasted with salt added,1.0 cup whole,135.0,837.0,cup,1.0,whole,Nut and Seed Products
+323505,"Kale, raw",kale raw,"1.0 cup pieces of ~1""",20.6,7.21,cup,1.0,"pieces of ~1""",Vegetables and Vegetable Products
+323604,"Egg, whole, raw, frozen, pasteurized",egg whole raw frozen pasteurized,1.0 oz,28.4,42.6,oz,1.0,,Dairy and Egg Products
+323697,"Egg, white, raw, frozen, pasteurized",egg white raw frozen pasteurized,1.0 oz,28.4,13.63,oz,1.0,,Dairy and Egg Products
+323793,"Egg, white, dried",egg white dried,1.0 tablespoon,7.0,26.32,tablespoon,1.0,,Dairy and Egg Products
+323793,"Egg, white, dried",egg white dried,1.0 cup sifted,107.0,402.32,cup,1.0,sifted,Dairy and Egg Products
+324317,"Onion rings, breaded, par fried, frozen, prepared, heated in oven",onion rings breaded par fried frozen prepared heated in oven,1.0 piece,20.2,58.18,piece,1.0,,Vegetables and Vegetable Products
+324653,"Pickles, cucumber, dill or kosher dill",pickles cucumber dill or kosher dill,1.0 spear,40.4,4.85,spear,1.0,,Vegetables and Vegetable Products
+325036,"Cheese, parmesan, grated",cheese parmesan grated,1.0 tablespoon,7.6,32.0,tablespoon,1.0,,Dairy and Egg Products
+325198,"Cheese, pasteurized process, American, vitamin D fortified",cheese pasteurized process american vitamin d fortified,1.0 slice,20.6,75.4,slice,1.0,,Dairy and Egg Products
+325287,"Grapefruit juice, white, canned or bottled, unsweetened",grapefruit juice white canned or bottled unsweetened,1.0 cup,257.0,95.09,cup,1.0,,Fruits and Fruit Juices
+325430,"Peaches, yellow, raw",peaches yellow raw,"1.0 fruit small (2-1/2"" dia)",147.0,61.74,fruit,1.0,"small (2-1/2"" dia)",Fruits and Fruit Juices
+325430,"Peaches, yellow, raw",peaches yellow raw,1.0 cup slices with skin,154.0,64.68,cup,1.0,slices with skin,Fruits and Fruit Juices
+325430,"Peaches, yellow, raw",peaches yellow raw,"1.0 fruit large (2-3/4"" dia)",173.0,72.66,fruit,1.0,"large (2-3/4"" dia)",Fruits and Fruit Juices
+325430,"Peaches, yellow, raw",peaches yellow raw,"1.0 fruit extra large (3"" dia)",225.0,94.5,fruit,1.0,"extra large (3"" dia)",Fruits and Fruit Juices
+325430,"Peaches, yellow, raw",peaches yellow raw,"1.0 fruit medium (2-2/3"" dia)",161.0,67.62,fruit,1.0,"medium (2-2/3"" dia)",Fruits and Fruit Juices
+325430,"Peaches, yellow, raw",peaches yellow raw,1.0 serving NLEA,147.0,61.74,serving,1.0,nlea ,Fruits and Fruit Juices
+325524,"Seeds, sunflower seed kernels, dry roasted, with salt added",seeds sunflower seed kernels dry roasted with salt added,1.0 cup,127.0,777.24,cup,1.0,,Nut and Seed Products
+325871,"Bread, white, commercially prepared",bread white commercially prepared,1.0 slice,27.3,73.71,slice,1.0,,Baked Products
+326196,"Kale, frozen, cooked, boiled, drained, without salt",kale frozen cooked boiled drained without salt,1.0 cup cooked,118.0,42.48,cup,1.0,cooked,Vegetables and Vegetable Products
+326698,"Mustard, prepared, yellow",mustard prepared yellow,1.0 cup,249.0,151.89,cup,1.0,,Spices and Herbs
+326698,"Mustard, prepared, yellow",mustard prepared yellow,1.0 teaspoon,6.0,3.66,teaspoon,1.0,,Spices and Herbs
+327357,"Nectarines, raw",nectarines raw,"1.0 each 2-1/3"" dia",129.0,50.31,each,1.0,"2-1/3"" dia",Fruits and Fruit Juices
+327357,"Nectarines, raw",nectarines raw,"1.0 each 2-3/4"" dia",156.0,60.84,each,1.0,"2-3/4"" dia",Fruits and Fruit Juices
+327357,"Nectarines, raw",nectarines raw,"1.0 each  2-1/2"" dia",142.0,55.38,each,1.0," 2-1/2"" dia",Fruits and Fruit Juices
+327357,"Nectarines, raw",nectarines raw,1.0 serving NLEA,140.0,54.6,serving,1.0,nlea,Fruits and Fruit Juices
+327357,"Nectarines, raw",nectarines raw,1.0 cup  slices,143.0,55.77,cup,1.0, slices,Fruits and Fruit Juices
+328841,"Cheese, cottage, lowfat, 2% milkfat",cheese cottage lowfat 2% milkfat,1.0 cup,220.0,184.8,cup,1.0,,Dairy and Egg Products
+329370,"Cheese, mozzarella, low moisture, part-skim",cheese mozzarella low moisture part-skim,1.0 cup,86.2,256.88,cup,1.0,,Dairy and Egg Products
+329490,"Egg, whole, dried",egg whole dried,1.0 cup sifted,85.0,488.75,cup,1.0,sifted,Dairy and Egg Products
+329490,"Egg, whole, dried",egg whole dried,1.0 tablespoon,5.0,28.75,tablespoon,1.0,,Dairy and Egg Products
+329490,"Egg, whole, dried",egg whole dried,1.0 oz,28.4,163.3,oz,1.0,,Dairy and Egg Products
+329596,"Egg, yolk, raw, frozen, pasteurized",egg yolk raw frozen pasteurized,1.0 oz,28.4,84.06,oz,1.0,,Dairy and Egg Products
+329716,"Egg, yolk, dried",egg yolk dried,1.0 tablespoon,4.0,26.16,tablespoon,1.0,,Dairy and Egg Products
+329716,"Egg, yolk, dried",egg yolk dried,1.0 cup sifted,67.0,438.18,cup,1.0,sifted,Dairy and Egg Products
+329716,"Egg, yolk, dried",egg yolk dried,1.0 oz,28.4,185.74,oz,1.0,,Dairy and Egg Products
+330137,"Yogurt, Greek, plain, nonfat",yogurt greek plain nonfat,1.0 container,156.0,95.16,container,1.0,,Dairy and Egg Products
+330415,"Yogurt, Greek, strawberry, nonfat",yogurt greek strawberry nonfat,1.0 container 5.3 oz,150.0,124.5,container,1.0,5.3 oz,Dairy and Egg Products
+330458,"Oil, coconut",oil coconut,1.0 tablespoon liquid oil,11.6,96.63,tablespoon,1.0,liquid oil,Fats and Oils
+331897,"Chicken, broilers or fryers, drumstick, meat only, cooked, braised",chicken broilers or fryers drumstick meat only cooked braised,1.0 drumstick with skin,104.0,162.24,drumstick,1.0,with skin,Poultry Products
+331897,"Chicken, broilers or fryers, drumstick, meat only, cooked, braised",chicken broilers or fryers drumstick meat only cooked braised,1.0 drumstick without skin,94.7,147.73,drumstick,1.0,without skin,Poultry Products
+331960,"Chicken, broiler or fryers, breast, skinless, boneless, meat only, cooked, braised",chicken broiler or fryers breast skinless boneless meat only cooked braised,1.0 piece,174.0,288.84,piece,1.0,,Poultry Products
+332282,"Sauce, pasta, spaghetti/marinara, ready-to-serve",sauce pasta spaghetti/marinara ready-to-serve,1.0 serving 1/2 cup,135.0,60.75,serving,1.0,1/2 cup,"Soups, Sauces, and Gravies"
+332397,"Ham, sliced, pre-packaged, deli meat (96%fat free, water added)",ham sliced pre-packaged deli meat 96%fat free water added,1.0 slice,13.5,14.31,slice,1.0,,Sausages and Luncheon Meats
+332791,"Olives, green, Manzanilla, stuffed with pimiento",olives green manzanilla stuffed with pimiento,1.0 olive,3.2,4.16,olive,1.0,,Fruits and Fruit Juices
+333008,"Cookies, oatmeal, soft, with raisins",cookies oatmeal soft with raisins,1.0 cookie,27.0,116.1,cookie,1.0,,Baked Products
+333281,"Tomatoes, canned, red, ripe, diced",tomatoes canned red ripe diced,1.0 cup,245.0,44.1,cup,1.0,,Vegetables and Vegetable Products
+333374,"Fish, haddock, raw",fish haddock raw,1.0 fillet,176.0,130.24,fillet,1.0,,Finfish and Shellfish Products
+333476,"Fish, pollock, raw",fish pollock raw,1.0 fillet,177.0,99.12,fillet,1.0,,Finfish and Shellfish Products
+334536,"Restaurant, Chinese, fried rice, without meat",restaurant chinese fried rice without meat,1.0 cup,133.0,231.42,cup,1.0,,Restaurant Foods
+334628,"Restaurant, Latino, tamale, pork",restaurant latino tamale pork,1.0 piece,142.0,247.08,piece,1.0,,Restaurant Foods
+334720,"Restaurant, Latino, pupusas con frijoles (pupusas, bean)",restaurant latino pupusas con frijoles pupusas bean,1.0 piece,126.0,288.54,piece,1.0,,Restaurant Foods
+335240,"Bread, whole-wheat, commercially prepared",bread whole-wheat commercially prepared,1.0 slice,32.1,81.53,slice,1.0,,Baked Products
+746758,"Beef, loin, tenderloin roast, separable lean only, boneless, trimmed to 0"" fat, select, cooked, roasted","beef loin tenderloin roast separable lean only boneless trimmed to 0"" fat select cooked roasted",1.0 roast cooked,462.0,813.12,roast,1.0,cooked,Beef Products
+746759,"Beef, loin, top loin steak, boneless, lip-on, separable lean only, trimmed to 1/8"" fat, choice, raw","beef loin top loin steak boneless lip-on separable lean only trimmed to 1/8"" fat choice raw",1.0 steak raw,284.0,440.2,steak,1.0,raw,Beef Products
+746760,"Beef, round, eye of round roast, boneless, separable lean only, trimmed to 0"" fat, select, raw","beef round eye of round roast boneless separable lean only trimmed to 0"" fat select raw",1.0 roast raw,690.0,841.8,roast,1.0,raw,Beef Products
+746761,"Beef, round, top round roast, boneless, separable lean only, trimmed to 0"" fat, select, raw","beef round top round roast boneless separable lean only trimmed to 0"" fat select raw",1.0 roast raw,788.0,969.24,roast,1.0,raw,Beef Products
+746762,"Beef, short loin, porterhouse steak, separable lean only, trimmed to 1/8"" fat, select, raw","beef short loin porterhouse steak separable lean only trimmed to 1/8"" fat select raw",1.0 steak raw,525.0,761.25,steak,1.0,raw,Beef Products
+746763,"Beef, short loin, t-bone steak, bone-in, separable lean only, trimmed to 1/8"" fat, choice, cooked, grilled","beef short loin t-bone steak bone-in separable lean only trimmed to 1/8"" fat choice cooked grilled",1.0 steak cooked,360.0,788.4,steak,1.0,cooked,Beef Products
+746765,"Cheese, dry white, queso seco",cheese dry white queso seco,1.0 cup grated,97.3,317.2,cup,1.0,grated,Dairy and Egg Products
+746766,"Cheese, ricotta, whole milk",cheese ricotta whole milk,0.2 cup,64.6,101.42,cup,0.2,,Dairy and Egg Products
+746766,"Cheese, ricotta, whole milk",cheese ricotta whole milk,1.0 cup,258.0,405.06,cup,1.0,,Dairy and Egg Products
+746766,"Cheese, ricotta, whole milk",cheese ricotta whole milk,0.5 cup,129.0,202.53,cup,0.5,,Dairy and Egg Products
+746767,"Cheese, swiss",cheese swiss,1.0 slice regular,21.9,86.07,slice,1.0,regular,Dairy and Egg Products
+746767,"Cheese, swiss",cheese swiss,1.0 slice thin,10.9,42.84,slice,1.0,thin,Dairy and Egg Products
+746768,"Figs, dried, uncooked",figs dried uncooked,1.0 each,8.4,20.92,each,1.0,,Fruits and Fruit Juices
+746768,"Figs, dried, uncooked",figs dried uncooked,1.0 cup,149.0,371.01,cup,1.0,,Fruits and Fruit Juices
+746769,"Lettuce, cos or romaine, raw",lettuce cos or romaine raw,1.0 bunch,581.0,98.77,bunch,1.0,,Vegetables and Vegetable Products
+746770,"Melons, cantaloupe, raw",melons cantaloupe raw,1.0 wedge medium (1/8 of medium melon),69.0,23.46,wedge,1.0,medium (1/8 of medium melon),Fruits and Fruit Juices
+746770,"Melons, cantaloupe, raw",melons cantaloupe raw,1.0 wedge large (1/8 of large melon),102.0,34.68,wedge,1.0,large (1/8 of large melon),Fruits and Fruit Juices
+746770,"Melons, cantaloupe, raw",melons cantaloupe raw,"1.0 each small (about 4-1/4"" dia)",441.0,149.94,each,1.0,"small (about 4-1/4"" dia)",Fruits and Fruit Juices
+746770,"Melons, cantaloupe, raw",melons cantaloupe raw,"1.0 each large (about 6-1/2"" dia)",814.0,276.76,each,1.0,"large (about 6-1/2"" dia)",Fruits and Fruit Juices
+746770,"Melons, cantaloupe, raw",melons cantaloupe raw,1.0 cup cubes,160.0,54.4,cup,1.0,cubes,Fruits and Fruit Juices
+746770,"Melons, cantaloupe, raw",melons cantaloupe raw,10.0 pieces balls,138.0,46.92,pieces,10.0,balls,Fruits and Fruit Juices
+746770,"Melons, cantaloupe, raw",melons cantaloupe raw,1.0 cup diced,156.0,53.04,cup,1.0,diced,Fruits and Fruit Juices
+746770,"Melons, cantaloupe, raw",melons cantaloupe raw,"1.0 each medium (about 5"" dia)",552.0,187.68,each,1.0,"medium (about 5"" dia)",Fruits and Fruit Juices
+746770,"Melons, cantaloupe, raw",melons cantaloupe raw,1.0 wedge small (1/8 of small melon),55.0,18.7,wedge,1.0,small (1/8 of small melon),Fruits and Fruit Juices
+746771,"Oranges, raw, navels",oranges raw navels,1.0 cup sections no membranes,165.0,77.55,cup,1.0,sections no membranes,Fruits and Fruit Juices
+746771,"Oranges, raw, navels",oranges raw navels,"1.0 each  2-7/8"" dia",140.0,65.8,each,1.0," 2-7/8"" dia",Fruits and Fruit Juices
+746772,"Milk, lowfat, fluid, 1% milkfat, with added vitamin A and vitamin D",milk lowfat fluid 1% milkfat with added vitamin a and vitamin d,1.0 cup,246.0,105.78,cup,1.0,,Dairy and Egg Products
+746773,"Pears, raw, bartlett",pears raw bartlett,1.0 cup slices,140.0,79.8,cup,1.0,slices,Fruits and Fruit Juices
+746773,"Pears, raw, bartlett",pears raw bartlett,1.0 each medium,178.0,101.46,each,1.0,medium,Fruits and Fruit Juices
+746773,"Pears, raw, bartlett",pears raw bartlett,1.0 each large,230.0,131.1,each,1.0,large,Fruits and Fruit Juices
+746773,"Pears, raw, bartlett",pears raw bartlett,1.0 each small,148.0,84.36,each,1.0,small,Fruits and Fruit Juices
+746774,"Restaurant, Chinese, sweet and sour pork",restaurant chinese sweet and sour pork,1.0 order,611.0,1588.6,order,1.0,,Restaurant Foods
+746774,"Restaurant, Chinese, sweet and sour pork",restaurant chinese sweet and sour pork,3.0 pieces,41.8,108.68,pieces,3.0,,Restaurant Foods
+746775,"Salt, table, iodized",salt table iodized,1.0 teaspoon,6.1,,teaspoon,1.0,,Spices and Herbs
+746776,"Milk, nonfat, fluid, with added vitamin A and vitamin D (fat free or skim)",milk nonfat fluid with added vitamin a and vitamin d fat free or skim,1.0 cup,246.0,83.64,cup,1.0,,Dairy and Egg Products
+746777,"Sauce, salsa, ready-to-serve",sauce salsa ready-to-serve,2.0 tablespoon,35.7,10.35,tablespoon,2.0,,"Soups, Sauces, and Gravies"
+746778,"Milk, reduced fat, fluid, 2% milkfat, with added vitamin A and vitamin D",milk reduced fat fluid 2% milkfat with added vitamin a and vitamin d,1.0 cup,245.0,122.5,cup,1.0,,Dairy and Egg Products
+746779,"Sausage, breakfast sausage, beef, pre-cooked, unprepared",sausage breakfast sausage beef pre-cooked unprepared,1.0 link,18.6,61.01,link,1.0,,Sausages and Luncheon Meats
+746780,"Sausage, Italian, pork, mild, cooked, pan-fried",sausage italian pork mild cooked pan-fried,1.0 link medium,86.6,278.85,link,1.0,medium,Sausages and Luncheon Meats
+746781,"Sausage, pork, chorizo, link or ground, cooked, pan-fried",sausage pork chorizo link or ground cooked pan-fried,1.0 link long,186.0,643.56,link,1.0,long,Sausages and Luncheon Meats
+746781,"Sausage, pork, chorizo, link or ground, cooked, pan-fried",sausage pork chorizo link or ground cooked pan-fried,1.0 cup ground,185.0,640.1,cup,1.0,ground,Sausages and Luncheon Meats
+746781,"Sausage, pork, chorizo, link or ground, cooked, pan-fried",sausage pork chorizo link or ground cooked pan-fried,1.0 link medium,80.4,278.18,link,1.0,medium,Sausages and Luncheon Meats
+746782,"Milk, whole, 3.25% milkfat, with added vitamin D",milk whole 3.25% milkfat with added vitamin d,1.0 cup,249.0,149.4,cup,1.0,,Dairy and Egg Products
+746783,"Sausage, turkey, breakfast links, mild, raw",sausage turkey breakfast links mild raw,1.0 package,450.0,760.5,package,1.0,,Sausages and Luncheon Meats
+746783,"Sausage, turkey, breakfast links, mild, raw",sausage turkey breakfast links mild raw,1.0 link,27.9,47.15,link,1.0,,Sausages and Luncheon Meats
+746784,"Sugars, granulated",sugars granulated,1.0 teaspoon,4.0,15.4,teaspoon,1.0,,Sweets
+746784,"Sugars, granulated",sugars granulated,1.0 cup,188.0,723.8,cup,1.0,,Sweets
+746785,"Turkey, ground, 93% lean, 7% fat, pan-broiled crumbles",turkey ground 93% lean 7% fat pan-broiled crumbles,1.0 paired cooked w crumbles,155.0,341.0,paired cooked w,1.0,crumbles,Poultry Products
+746952,"Ham, sliced, restaurant",ham sliced restaurant,1.0 slice,16.2,19.6,slice,1.0,,Pork Products
+747429,"Cheese, American, restaurant",cheese american restaurant,1.0 slice,16.0,60.0,slice,1.0,,Dairy and Egg Products
+747447,"Broccoli, raw",broccoli raw,1.0 cup chopped,76.0,23.56,cup,1.0,chopped,Vegetables and Vegetable Products
+747997,"Eggs, Grade A, Large, egg white",eggs grade a large egg white,1.0 egg white,34.0,18.7,egg,1.0,white,Dairy and Egg Products
+748236,"Eggs, Grade A, Large, egg yolk",eggs grade a large egg yolk,1.0 egg yolk,17.0,56.78,egg,1.0,yolk,Dairy and Egg Products
+748278,"Oil, canola",oil canola,100.0 milliliter,90.9,,milliliter,100.0,,Fats and Oils
+748323,"Oil, corn",oil corn,100.0 milliliter,91.3,,milliliter,100.0,,Fats and Oils
+748366,"Oil, soybean",oil soybean,100.0 milliliter,91.3,,milliliter,100.0,,Fats and Oils
+748608,"Oil, olive, extra virgin",oil olive extra virgin,100.0 milliliter,90.7,,milliliter,100.0,,Fats and Oils
+748967,"Eggs, Grade A, Large, egg whole",eggs grade a large egg whole,1.0 egg whole without shell,50.3,74.44,egg,1.0,whole without shell,Dairy and Egg Products
+749420,"Pork, cured, bacon, cooked, restaurant",pork cured bacon cooked restaurant,1.0 slice,6.3,31.5,slice,1.0,,Pork Products
+790577,"Onions, red, raw",onions red raw,1.0 Onion Edible,197.0,86.68,onion,1.0,edible,Vegetables and Vegetable Products
+790646,"Onions, yellow, raw",onions yellow raw,1.0 Onion Edible,143.0,54.34,onion,1.0,edible,Vegetables and Vegetable Products
+1105073,"Bananas, overripe, raw",bananas overripe raw,1.0 Banana Peeled,110.0,93.5,banana,1.0,peeled,Fruits and Fruit Juices
+1105314,"Bananas, ripe and slightly ripe, raw",bananas ripe and slightly ripe raw,1.0 Banana Peeled,115.0,111.55,banana,1.0,peeled,Fruits and Fruit Juices

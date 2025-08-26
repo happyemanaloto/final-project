@@ -21,6 +21,16 @@ COUNTRY_CUES = {
 
 COURSE_CUES = {"breakfast","appetizer","snack","main","dessert","soup","stew"}
 DISH_TYPES = {"soup","stew","noodles","stir-fry","rice","grill","roast","salad","bread","pastry"}
+# bot/taxonomy.py
+ALIASES = {
+    # Spanish / Basque
+    "pinchos": "pintxos",
+    "pintxos": "pintxos",
+
+    # French
+    "croissant": "croissant",
+
+}
 
 def infer_country_from_text(title: str, cuisine: str | None) -> str | None:
     blob = f"{title} {cuisine or ''}".lower()
