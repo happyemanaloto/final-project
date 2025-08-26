@@ -74,7 +74,6 @@ def _b64_file(path: Path) -> Optional[str]:
     except Exception:
         return None
 
-
 def _apply_background():
     """Apply a page background image and custom CSS for chat bubbles and controls."""
     b64 = _b64_file(BACKGROUND_IMG) if BACKGROUND_IMG.exists() else None
@@ -121,8 +120,8 @@ def _apply_background():
         }}
         /* Dropdown height */
         .stSelectbox div[data-baseweb="select"] > div {{
-            min-height: 28px !important;
-            height: 28px !important;
+            min-height: 44px !important;
+            height: 44px !important;
         }}
         </style>
         """,
@@ -148,6 +147,13 @@ def _video_html(path: Path):
         unsafe_allow_html=True,
     )
 
+def remove_json_block(text: str) -> str:
+    # Remove fenced JSON code blocks (```json … ```), if present
+    text = re.sub(r"```json\\s*\\{[^`]*\\}```", "", text, flags=re.DOTALL | re.IGNORECASE)
+    # Remove standalone JSON objects (e.g., { "calories": … }) if no backticks
+    text = re.sub(r"\\{[^{}]*\\}", "", text)
+    # Trim extra spaces left behind
+    return " ".join(text.split())
 
 def _naturalize_for_tts(text: str) -> str:
     """Insert light punctuation and breaks so gTTS sounds more natural."""
@@ -166,7 +172,52 @@ def _naturalize_for_tts(text: str) -> str:
     if t and t[-1] not in ".!?":
         t += "."
     return t
+#
+# Additional cleaning for text-to-speech
+#
+# The bot often uses emojis to express cooking themes (🍳🥗) and includes
+# certain characters or substrings (e.g. "#", "*", apostrophes, or the word
+# "json") that can cause gTTS to mispronounce or produce awkward pauses.
+# To ensure smoother audio output while preserving the visual reply, we
+# remove these items just before calling gTTS.  This function should be
+# applied after naturalization but before gTTS invocation.  It leaves
+# non‑problematic punctuation intact.
+_EMOJI_RE = re.compile(
+    "["
+    u"\U0001F600-\U0001F64F"  # emoticons
+    u"\U0001F300-\U0001F5FF"  # symbols & pictographs
+    u"\U0001F680-\U0001F6FF"  # transport & map symbols
+    u"\U0001F1E0-\U0001F1FF"  # flags
+    u"\U00002700-\U000027BF"  # dingbats
+    u"\U0001F900-\U0001F9FF"  # supplemental symbols
+    "]+",
+    flags=re.UNICODE,
+)
 
+def _strip_unwanted_for_tts(text: str) -> str:
+    """Remove emojis and specific unwanted characters before TTS.
+
+    This function strips out:
+      • All Unicode emoji characters defined by _EMOJI_RE.
+      • The substring "json" (case‑insensitive), as it may leak implementation details.
+      • Hash symbols (#), asterisks (*), and apostrophes (') which can cause
+        unnatural pauses or mispronunciations in speech.
+
+    Args:
+        text: The naturalized text string.
+
+    Returns:
+        A cleaned string with unwanted elements removed.
+    """
+    if not text:
+        return text
+    # Remove emojis
+    t = _EMOJI_RE.sub("", text)
+    # Remove the substring "json" in a case-insensitive manner
+    t = re.sub(r"json", "", t, flags=re.IGNORECASE)
+    # Remove specific characters (#, *, and apostrophes)
+    t = t.replace("#", "").replace("*", "").replace("'", "").replace('`', '').replace('{', '').replace('}', '')
+    return t
 
 def _gtts_to_b64(text: str) -> Optional[str]:
     """Generate a base64‑encoded MP3 from text using gTTS.  Applies naturalization and language selection."""
@@ -176,12 +227,14 @@ def _gtts_to_b64(text: str) -> Optional[str]:
         # Choose gTTS language based on current reply_lang
         lang_code = _pick_gtts_lang(st.session_state.reply_lang)
         buf = io.BytesIO()
-        gTTS(text=_naturalize_for_tts(text), lang=lang_code).write_to_fp(buf)
+        # Naturalize the text (insert pauses/punctuation) and strip unwanted symbols
+        naturalized = _naturalize_for_tts(text)
+        cleaned = _strip_unwanted_for_tts(naturalized)
+        gTTS(text=cleaned, lang=lang_code).write_to_fp(buf)
         buf.seek(0)
         return base64.b64encode(buf.read()).decode("ascii")
     except Exception:
         return None
-
 
 def _autoplay_audio(b64_mp3: str):
     """Render an HTML5 audio tag that plays automatically once."""
@@ -196,7 +249,6 @@ def _autoplay_audio(b64_mp3: str):
         unsafe_allow_html=True,
     )
 
-
 def _play_audio_controls(b64_audio: str, mime: str):
     """Render an audio player with controls for user playback."""
     if not b64_audio:
@@ -210,7 +262,6 @@ def _play_audio_controls(b64_audio: str, mime: str):
         unsafe_allow_html=True,
     )
 
-
 def _save_temp_file(b64_data: str, suffix: str) -> str:
     """Write base64 data to a temporary file and return its path."""
     raw = base64.b64decode(b64_data)
@@ -219,14 +270,11 @@ def _save_temp_file(b64_data: str, suffix: str) -> str:
         f.write(raw)
     return path
 
-
 def _is_audio(ext: str) -> bool:
     return ext.lower() in {"wav", "mp3", "m4a", "aac", "ogg", "flac", "opus"}
 
-
 def _is_video(ext: str) -> bool:
     return ext.lower() in {"mp4", "mov", "mkv", "webm", "m4v", "mpeg", "mpg", "avi"}
-
 
 # ---------- State ----------
 def _init_state():
@@ -247,7 +295,7 @@ def _init_state():
     ss.setdefault("session", None)          # SessionMemory instance
     ss.setdefault("agent", None)            # agent instance
     ss.setdefault("boot_done", False)       # flag to indicate backend loaded
-
+    ss.setdefault("translate_on", True) 
 
 def _boot_once():
     """Load documents, build vectorstore, wire session hooks, and build agent once."""
@@ -268,7 +316,6 @@ def _boot_once():
     ss.session = session
     ss.agent = agent
     ss.boot_done = True
-
 
 # ---------- Main Page ----------
 
@@ -296,7 +343,6 @@ with st.container():
             st.rerun()
     with cols[1]:
         st.empty()
-
 
 # ---------- Layout: left video, middle chat, right controls ----------
 left, mid, right = st.columns([0.26, 0.60, 0.14], gap="large")
@@ -379,7 +425,6 @@ with mid:
 
     st.markdown('</div>', unsafe_allow_html=True)
 
-
 with right:
     st.markdown('<div class="right-rail icon-btn">', unsafe_allow_html=True)
     # Language dropdown
@@ -398,9 +443,9 @@ with right:
         if ss.session:
             ss.session.reply_lang = new_code
 
-    # Friend toggle (translate all replies)
-    if st.button("友", use_container_width=True, help="Toggle translation of replies into chosen language"):
-        ss.translate_on = not ss.translate_on
+    # # Friend toggle (translate all replies)
+    # if st.button("友", use_container_width=True, help="Toggle translation of replies into chosen language"):
+    #     ss.translate_on = not ss.translate_on
 
     # Upload toggle (show/hide uploader)
     if st.button("➕", use_container_width=True, help="Upload audio/video to transcribe & summarize"):
@@ -441,6 +486,18 @@ with right:
                 transcript_path = Path(res_json.get("transcript_path", ""))
                 if not transcript_path.is_absolute():
                     transcript_path = (PROJECT_ROOT / transcript_path).resolve()
+
+                # Load the raw transcript and remove JSON nutrition blocks before summarization
+                try:
+                    transcript_obj = json.loads(transcript_path.read_text(encoding="utf-8"))
+                    transcript_raw = " ".join(
+                        s.get("text", "").strip() for s in transcript_obj.get("segments", []) if s.get("text")
+                    )
+                    clean_transcript = remove_json_block(transcript_raw)
+                    print(clean_transcript)  # or use st.text(clean_transcript) to display in the app
+                except Exception:
+                    pass
+
                 summ = summarize_transcript_file.invoke({"transcript_path": str(transcript_path), "target_lang": ss.reply_lang})
                 summary_text = summ if isinstance(summ, str) else str(summ)
                 # Show summarization in chat
@@ -487,6 +544,18 @@ with right:
                     transcript_path = Path(res_json.get("transcript_path", ""))
                     if not transcript_path.is_absolute():
                         transcript_path = (PROJECT_ROOT / transcript_path).resolve()
+
+                    # Load the raw transcript and remove JSON nutrition blocks before summarization
+                    try:
+                        transcript_obj = json.loads(transcript_path.read_text(encoding="utf-8"))
+                        transcript_raw = " ".join(
+                            s.get("text", "").strip() for s in transcript_obj.get("segments", []) if s.get("text")
+                        )
+                        clean_transcript = remove_json_block(transcript_raw)
+                        print(clean_transcript)  # or use st.text(clean_transcript) to display in the app
+                    except Exception:
+                        pass
+
                     summ = summarize_transcript_file.invoke({"transcript_path": str(transcript_path), "target_lang": ss.reply_lang})
                     summary_text = summ if isinstance(summ, str) else str(summ)
                     ss.messages.append({"role": "user", "content": "(Mic) Please summarize ingredients and steps."})
