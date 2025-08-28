@@ -14,7 +14,7 @@ from youtube_transcript_api import YouTubeTranscriptApi, TranscriptsDisabled, No
 from yt_dlp import YoutubeDL
 
 # Local helpers
-from .nlp import ensure_reply_language, localize_ingredients
+from .nlp import ensure_reply_language, localize_ingredients, llm_zero
 
 # Import your full pipeline
 try:
@@ -26,6 +26,8 @@ except Exception:
 VS = None
 _get_hits: Optional[Callable[[], list]] = None
 _set_hits: Optional[Callable[[list], None]] = None
+# Cache for estimate_nutrition calls to avoid recomputing identical requests
+_nutrition_cache: Dict[tuple, str] = {}
 
 def bind_vectorstore(vs):
     """Call once at startup to give tools access to your Chroma vector store."""
@@ -328,7 +330,8 @@ def vector_search(**kwargs) -> str:
     country = kwargs.get("country")
     continent = kwargs.get("continent")
 
-    docs_scores = VS.similarity_search_with_score(query, k=max(12, top_k * 4))
+    # docs_scores = VS.similarity_search_with_score(query, k=max(12, top_k * 4))
+    docs_scores = VS.similarity_search_with_score(query, k=max(8, top_k * 2))
 
     ranked: List[tuple] = []
     for doc, dist in docs_scores:
@@ -485,9 +488,14 @@ def summarize_transcript_file(transcript_path: str, target_lang: str = "en") -> 
         ("system", "From transcript, write: Title; ≤6 key ingredients; 3–5 steps; 1 tip."),
         ("human", "Target language: {lang}\n\nTranscript:\n{tx}")
     ])
-    out = (prompt | ChatOpenAI(model=os.getenv("CHEF_BOT_MODEL", "gpt-4o-mini"), temperature=0)).invoke(
-        {"lang": target_lang or "en", "tx": raw_txt[:12000]}
+    # out = (prompt | ChatOpenAI(model=os.getenv("CHEF_BOT_MODEL", "gpt-4o-mini"), temperature=0)).invoke(
+    # out = (prompt | ChatOpenAI(model=os.getenv("CHEF_BOT_MODEL", "gpt‑3.5‑turbo"), temperature=0)).invoke(
+    #     {"lang": target_lang or "en", "tx": raw_txt[:12000]}
+    # )
+    out = (prompt | llm_zero(temperature=0)).invoke(
+        {"lang": target_lang or "en", "tx": raw_txt[:5000]}
     )
+
     summary = out.content.strip()
 
     # Try to collect a few ingredients from the summary for follow-ups
@@ -541,10 +549,22 @@ def estimate_nutrition(ingredients: List[str], servings: Optional[int] = 2, loca
         ("system", "Estimate nutrition per serving from ingredient list. Return compact JSON numbers."),
         ("human", "Ingredients:\n{ings}\nServings: {serv}\nLocale: {loc}")
     ])
-    out = (prompt | ChatOpenAI(model=os.getenv("CHEF_BOT_MODEL", "gpt-4o-mini"), temperature=0)).invoke(
+    # Build a cache key (convert ingredients list to a tuple so it’s hashable)
+    cache_key = (tuple(ingredients), servings or 2, locale or "EU")
+    if cache_key in _nutrition_cache:
+        return _nutrition_cache[cache_key]
+
+    # out = (prompt | ChatOpenAI(model=os.getenv("CHEF_BOT_MODEL", "gpt-4o-mini"), temperature=0)).invoke(
+    # out = (prompt | ChatOpenAI(model=os.getenv("CHEF_BOT_MODEL", "gpt‑3.5‑turbo"), temperature=0)).invoke(
+    #     {"ings": "\n".join(ingredients), "serv": servings, "loc": locale}
+    # )
+    # return out.content
+    out = (prompt | llm_zero(temperature=0)).invoke(
         {"ings": "\n".join(ingredients), "serv": servings, "loc": locale}
     )
-    return out.content
+    result = out.content
+    _nutrition_cache[cache_key] = result  # save to cache
+    return result
 
 # ========= Shopping List =========
 class ShopArgs(BaseModel):
@@ -572,8 +592,14 @@ def make_shopping_list(recipes: Optional[List[Dict[str, Any]]] = None,
         ("system", "Aggregate a concise shopping list grouped by aisle; merge duplicates; add brief cheaper substitutions."),
         ("human", "Target language: {lang}\nServings x: {mult}\n\nRecipes:\n{payload}")
     ])
-    out = (prompt | ChatOpenAI(model=os.getenv("CHEF_BOT_MODEL", "gpt-4o-mini"), temperature=0)).invoke(
-        {"lang": target_lang or "en", "mult": servings_multiplier or 1.0, "payload": json.dumps({"recipes": slim}, ensure_ascii=False)}
+    # out = (prompt | ChatOpenAI(model=os.getenv("CHEF_BOT_MODEL", "gpt-4o-mini"), temperature=0)).invoke(
+    # out = (prompt | ChatOpenAI(model=os.getenv("CHEF_BOT_MODEL", "gpt‑3.5‑turbo"), temperature=0)).invoke(
+    #     {"lang": target_lang or "en", "mult": servings_multiplier or 1.0, "payload": json.dumps({"recipes": slim}, ensure_ascii=False)}
+    # )
+    # return out.content.strip()
+    out = (prompt | llm_zero(temperature=0)).invoke(
+        {"lang": target_lang or "en", "mult": servings_multiplier or 1.0,
+        "payload": json.dumps({"recipes": slim}, ensure_ascii=False)}
     )
     return out.content.strip()
 
@@ -644,9 +670,14 @@ def translate_text(text: str, target_lang: str) -> str:
         ("system", "Translate; preserve bullets and formatting; return only translated text."),
         ("human", "Target language: {lang}\n\nText:\n{txt}")
     ])
-    out = (prompt | ChatOpenAI(model=os.getenv("CHEF_BOT_MODEL", "gpt-4o-mini"), temperature=0)).invoke(
+    # out = (prompt | ChatOpenAI(model=os.getenv("CHEF_BOT_MODEL", "gpt-4o-mini"), temperature=0)).invoke(
+    # out = (prompt | ChatOpenAI(model=os.getenv("CHEF_BOT_MODEL", "gpt‑3.5‑turbo"), temperature=0)).invoke(
+    #     {"lang": target_lang, "txt": text}
+    # )
+    out = (prompt | llm_zero(temperature=0)).invoke(
         {"lang": target_lang, "txt": text}
     )
+
     return out.content.strip()
 
 # ========= YouTube: summarize & QA (now cache a hit) =========
@@ -674,8 +705,12 @@ def summarize_video(url: str, target_lang: Optional[str] = None) -> str:
         ("system", "From transcript, write: Title; ≤6 key ingredients; 3–5 steps; 1 tip."),
         ("human", "Target language: {lang}\n\nTranscript:\n{tx}")
     ])
-    out = (prompt | ChatOpenAI(model=os.getenv("CHEF_BOT_MODEL", "gpt-4o-mini"), temperature=0)).invoke(
-        {"lang": target_lang or "en", "tx": tx}
+    # out = (prompt | ChatOpenAI(model=os.getenv("CHEF_BOT_MODEL", "gpt-4o-mini"), temperature=0)).invoke(
+    # out = (prompt | ChatOpenAI(model=os.getenv("CHEF_BOT_MODEL", "gpt‑3.5‑turbo"), temperature=0)).invoke(
+    #     {"lang": target_lang or "en", "tx": tx}
+    # )
+    out = (prompt | llm_zero(temperature=0)).invoke(
+        {"lang": target_lang or "en", "tx": tx[:5000]}
     )
 
     # Parse a reasonable title
@@ -741,8 +776,12 @@ def qa_video(url: str, question: str, target_lang: Optional[str] = None) -> str:
         ("system", "Answer strictly from transcript; if missing say 'Not stated in the video.' Be concise."),
         ("human", "Target language: {lang}\nQuestion: {q}\n\nTranscript:\n{tx}")
     ])
-    out = (prompt | ChatOpenAI(model=os.getenv("CHEF_BOT_MODEL", "gpt-4o-mini"), temperature=0)).invoke(
-        {"lang": target_lang or "en", "q": question, "tx": tx}
+    # out = (prompt | ChatOpenAI(model=os.getenv("CHEF_BOT_MODEL", "gpt-4o-mini"), temperature=0)).invoke(
+    # out = (prompt | ChatOpenAI(model=os.getenv("CHEF_BOT_MODEL", "gpt‑3.5‑turbo"), temperature=0)).invoke(
+    #     {"lang": target_lang or "en", "q": question, "tx": tx}
+    # )
+    out = (prompt | llm_zero(temperature=0)).invoke(
+        {"lang": target_lang or "en", "q": question, "tx": tx[:5000]}
     )
 
     _session_set_hits([{
@@ -794,8 +833,12 @@ def ingest_link(url: str, target_lang: Optional[str] = None) -> str:
         ("system", "Extract a concise recipe from the article. Return:\nTitle\n\nKey ingredients (≤8 bullets)\n\nQuick steps (3–6 bullets)\n\nTip (1 line)."),
         ("human", "Target language: {lang}\n\nArticle:\n{body}")
     ])
-    out = (prompt | ChatOpenAI(model=os.getenv("CHEF_BOT_MODEL", "gpt-4o-mini"), temperature=0)).invoke(
-        {"lang": target_lang or "en", "body": text[:8000]}
+    # out = (prompt | ChatOpenAI(model=os.getenv("CHEF_BOT_MODEL", "gpt-4o-mini"), temperature=0)).invoke(
+    # out = (prompt | ChatOpenAI(model=os.getenv("CHEF_BOT_MODEL", "gpt‑3.5‑turbo"), temperature=0)).invoke(
+    #     {"lang": target_lang or "en", "body": text[:8000]}
+    # )
+    out = (prompt | llm_zero(temperature=0)).invoke(
+        {"lang": target_lang or "en", "body": text[:5000]}
     )
     card_text = out.content.strip()
 
@@ -853,8 +896,12 @@ def calories_from_url(url: str, servings: Optional[int] = 1, locale: Optional[st
          "Return JSON with keys: title, ingredients (list of 6–14 items). No steps, no chatter."),
         ("human", "Text:\n{body}")
     ])
-    out = (prompt | ChatOpenAI(model=os.getenv("CHEF_BOT_MODEL", "gpt-4o-mini"), temperature=0)).invoke(
-        {"body": txt[:8000]}
+    # out = (prompt | ChatOpenAI(model=os.getenv("CHEF_BOT_MODEL", "gpt-4o-mini"), temperature=0)).invoke(
+    # out = (prompt | ChatOpenAI(model=os.getenv("CHEF_BOT_MODEL", "gpt‑3.5‑turbo"), temperature=0)).invoke(
+    #     {"body": txt[:8000]}
+    # )
+    out = (prompt | llm_zero(temperature=0)).invoke(
+        {"body": txt[:5000]}
     )
     title = "Recipe"
     ings: List[str] = []

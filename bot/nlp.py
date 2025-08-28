@@ -11,10 +11,12 @@ DetectorFactory.seed = 0
 
 # --- model config ---
 CHEF_TEMP = float(os.getenv("CHEF_TEMP", "0.5"))
-LLM_MODEL = os.getenv("CHEF_BOT_MODEL", "gpt-4o-mini")
+# LLM_MODEL = os.getenv("CHEF_BOT_MODEL", "gpt-4o-mini")
+LLM_MODEL = os.getenv("CHEF_BOT_MODEL", "gpt‑3.5‑turbo")
 
 _tracer_cache = None
-
+# Cache ChatOpenAI instances by (model, temperature) to avoid re-instantiating
+_LLM_CACHE: Dict[tuple, ChatOpenAI] = {}
 # =========================================================
 # Language tables
 # NOTE: We keep your original return style: "English","Tagalog",…
@@ -59,17 +61,30 @@ def _pick_gtts_lang(prefer: Optional[str]) -> str:
 # =========================================================
 # LLM plumbing
 # =========================================================
+# def llm_zero(temperature: float | None = None, model: str | None = None):
+#     global _tracer_cache
+#     if _tracer_cache is None:
+#         _tracer_cache = init_langsmith(project=os.getenv("LANGCHAIN_PROJECT", "KusinaBot"))
+#     kwargs = {
+#         "model": model or LLM_MODEL,
+#         "temperature": CHEF_TEMP if temperature is None else float(temperature),
+#     }
+#     if _tracer_cache:
+#         kwargs["callbacks"] = _tracer_cache
+#     return ChatOpenAI(**kwargs)
 def llm_zero(temperature: float | None = None, model: str | None = None):
-    global _tracer_cache
+    global _tracer_cache, _LLM_CACHE
     if _tracer_cache is None:
         _tracer_cache = init_langsmith(project=os.getenv("LANGCHAIN_PROJECT", "KusinaBot"))
-    kwargs = {
-        "model": model or LLM_MODEL,
-        "temperature": CHEF_TEMP if temperature is None else float(temperature),
-    }
-    if _tracer_cache:
-        kwargs["callbacks"] = _tracer_cache
-    return ChatOpenAI(**kwargs)
+    chosen_model = model or LLM_MODEL
+    chosen_temp = CHEF_TEMP if temperature is None else float(temperature)
+    cache_key = (chosen_model, chosen_temp)
+    if cache_key not in _LLM_CACHE:
+        kwargs = {"model": chosen_model, "temperature": chosen_temp}
+        if _tracer_cache:
+            kwargs["callbacks"] = _tracer_cache
+        _LLM_CACHE[cache_key] = ChatOpenAI(**kwargs)
+    return _LLM_CACHE[cache_key]
 
 # =========================================================
 # Language detection
