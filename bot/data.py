@@ -9,17 +9,17 @@ from langchain_openai import OpenAIEmbeddings
 # from langchain_openai import OpenAIEmbeddings
 
 # ---- Centralized paths (update here only) ----
-DEFAULT_YT_DIR   = Path(r"C:\Users\happy\Documents\ironhack\kusina-bot\final-project\src\backend\scrapers\data\recipes")
-DEFAULT_YT_JSONL = Path(r"C:\Users\happy\Documents\ironhack\kusina-bot\final-project\src\backend\scrapers\data\recipes\recipes.jsonl")
-DEFAULT_WB_DIR   = Path(r"C:\Users\happy\Documents\ironhack\kusina-bot\final-project\src\backend\scrapers\data\open_wikibooks_toc")
-DEFAULT_WB_JSONL = Path(r"C:\Users\happy\Documents\ironhack\kusina-bot\final-project\src\backend\scrapers\data\open_wikibooks_toc\recipes.jsonl")
-DEFAULT_VS_DIR   = Path(r"C:\Users\happy\Documents\ironhack\kusina-bot\final-project\src\backend\scrapers\data\vs")
-# --- NEW: local data you collected ---
-DEFAULT_SCRAPED_CSV = Path(r"C:\Users\happy\Documents\ironhack\kusina-bot\Reverse1\final-project\bot\data_recipes\txt\recipes_extracted_20250823_114251.csv")
-DEFAULT_KUSINA_DIR  = Path(r"C:\Users\happy\Documents\ironhack\kusina-bot\Reverse1\final-project\bot\data_kusina")
-KUSINA_INDEX_JSONL  = DEFAULT_KUSINA_DIR / "index" / "recipes_transcripts.jsonl"
-KUSINA_CHUNKS_DIR   = DEFAULT_KUSINA_DIR / "chunks"
-KUSINA_RAW_DIR      = DEFAULT_KUSINA_DIR / "raw"
+# DEFAULT_YT_DIR   = Path(r"C:\Users\happy\Documents\ironhack\kusina-bot\final-project\src\backend\scrapers\data\recipes")
+# DEFAULT_YT_JSONL = Path(r"C:\Users\happy\Documents\ironhack\kusina-bot\final-project\src\backend\scrapers\data\recipes\recipes.jsonl")
+# DEFAULT_WB_DIR   = Path(r"C:\Users\happy\Documents\ironhack\kusina-bot\final-project\src\backend\scrapers\data\open_wikibooks_toc")
+# DEFAULT_WB_JSONL = Path(r"C:\Users\happy\Documents\ironhack\kusina-bot\final-project\src\backend\scrapers\data\open_wikibooks_toc\recipes.jsonl")
+# DEFAULT_VS_DIR   = Path(r"C:\Users\happy\Documents\ironhack\kusina-bot\final-project\src\backend\scrapers\data\vs")
+# # --- NEW: local data you collected ---
+# DEFAULT_SCRAPED_CSV = Path(r"C:\Users\happy\Documents\ironhack\kusina-bot\Reverse1\final-project\bot\data_recipes\txt\recipes_extracted_20250823_114251.csv")
+# DEFAULT_KUSINA_DIR  = Path(r"C:\Users\happy\Documents\ironhack\kusina-bot\Reverse1\final-project\bot\data_kusina")
+# KUSINA_INDEX_JSONL  = DEFAULT_KUSINA_DIR / "index" / "recipes_transcripts.jsonl"
+# KUSINA_CHUNKS_DIR   = DEFAULT_KUSINA_DIR / "chunks"
+# KUSINA_RAW_DIR      = DEFAULT_KUSINA_DIR / "raw"
 
 STATE_DIR  = Path(__file__).resolve().parents[1] / "state"
 STATE_DIR.mkdir(parents=True, exist_ok=True)
@@ -27,7 +27,25 @@ STATE_DIR.mkdir(parents=True, exist_ok=True)
 CANON_PATH = Path(__file__).resolve().parent / "canon_foods.jsonl"
 
 
+# bot/data.py – put near the top
+APP_ROOT = Path(__file__).resolve().parents[1]
+DATA_DIR = APP_ROOT / "data"
+DATA_DIR.mkdir(parents=True, exist_ok=True)
 
+DEFAULT_YT_DIR   = DATA_DIR / "recipes"
+DEFAULT_YT_JSONL = DEFAULT_YT_DIR / "recipes.jsonl"
+DEFAULT_WB_DIR   = DATA_DIR / "open_wikibooks_toc"
+DEFAULT_WB_JSONL = DEFAULT_WB_DIR / "recipes.jsonl"
+DEFAULT_VS_DIR   = DATA_DIR / "vs"
+
+DEFAULT_SCRAPED_CSV = APP_ROOT / "bot" / "data_recipes" / "txt" / "recipes_extracted.csv"
+DEFAULT_KUSINA_DIR  = APP_ROOT / "bot" / "data_kusina"
+
+STATE_DIR  = APP_ROOT / "state"
+STATE_DIR.mkdir(parents=True, exist_ok=True)
+KUSINA_INDEX_JSONL  = DEFAULT_KUSINA_DIR / "index" / "recipes_transcripts.jsonl"
+KUSINA_CHUNKS_DIR   = DEFAULT_KUSINA_DIR / "chunks"
+KUSINA_RAW_DIR      = DEFAULT_KUSINA_DIR / "raw"
 
 class MemoryStore:
     def __init__(self, path: Path):
@@ -110,104 +128,6 @@ def _jsonl_load(path: Optional[Path]) -> List[Dict[str, Any]]:
                 try: out.append(json.loads(ln))
                 except Exception: pass
     return out
-
-# def _load_canon_foods_as_texts_metas():
-#     """Return (texts, metas) built from canon_foods.jsonl."""
-#     if not CANON_PATH.exists():
-#         return [], []
-#     texts, metas = [], []
-#     for line in CANON_PATH.read_text(encoding="utf-8").splitlines():
-#         if not line.strip():
-#             continue
-#         obj = json.loads(line)
-#         aliases = ", ".join(a.get("text","") for a in obj.get("aliases", []))
-#         blob = (
-#             f"{obj.get('name','')} ({obj.get('country','')})\n"
-#             f"Aliases: {aliases}\n"
-#             f"Category: {obj.get('category','')}\n"
-#             f"Def: {obj.get('short_def','')}\n"
-#             f"Typical ingredients: {', '.join(obj.get('typical_ingredients', []))}"
-#         ).strip()
-
-#         texts.append(blob)
-#         # Fill the same meta keys your recipes use so downstream code stays happy
-#         metas.append({
-#             "id": obj.get("id", ""),
-#             "title": obj.get("name", ""),
-#             "url": "",
-#             "source": "canon",
-#             "image_url": "",
-#             "cuisine": obj.get("category",""),
-#             "country": obj.get("country",""),
-#             "continent": "",
-#             "region": obj.get("region",""),
-#             "dish_type": obj.get("category",""),
-#             "course": "",
-#             "cook_time": None,
-#             "servings": None,
-#             "popularity_score": 100,  # small boost so canon ranks well
-#             "signals_json": json.dumps({}, ensure_ascii=False),
-
-#             "ingredients_json": json.dumps(obj.get("typical_ingredients", []), ensure_ascii=False),
-#             "steps_json": json.dumps([], ensure_ascii=False),
-#             "dietary_tags_json": json.dumps([], ensure_ascii=False),
-
-#             "ingredients_text": ", ".join(obj.get("typical_ingredients", [])),
-#             "lang": obj.get("lang",""),
-#             "aliases": aliases,
-#         })
-#     return texts, metas
-
-# def load_canon_foods() -> list[Document]:
-#     docs = []
-#     if not CANON_PATH.exists():
-#         return docs
-#     for line in CANON_PATH.read_text(encoding="utf-8").splitlines():
-#         if not line.strip():
-#             continue
-#         obj = json.loads(line)
-#         # Build a compact, retrievable text
-#         aliases = ", ".join(a["text"] for a in obj.get("aliases", []))
-#         blob = (
-#             f"{obj.get('name','')} ({obj.get('country','')})\n"
-#             f"Aliases: {aliases}\n"
-#             f"Category: {obj.get('category','')}\n"
-#             f"Def: {obj.get('short_def','')}\n"
-#             f"Typical ingredients: {', '.join(obj.get('typical_ingredients', []))}"
-#         )
-#         docs.append(
-#             Document(
-#                 page_content=blob,
-#                 metadata={
-#                     "id": obj.get("id"),
-#                     "name": obj.get("name"),
-#                     "lang": obj.get("lang"),
-#                     "country": obj.get("country"),
-#                     "category": obj.get("category"),
-#                     "aliases": aliases,
-#                     "source": "canon",
-#                 },
-#             )
-#         )
-#     return docs
-
-# def build_or_load_vectorstore(all_docs: list[Document], persist_dir: Path, rebuild: bool = False):
-#     """
-#     Replace your existing VS builder with this (or adjust accordingly).
-#     It merges your scraped docs + the canon.
-#     """
-#     canon_docs = load_canon_foods()
-#     docs = (all_docs or []) + canon_docs
-
-#     emb = HuggingFaceEmbeddings(model_name=EMBED_MODEL)  # multilingual
-#     vs_path = persist_dir / "faiss_index"
-
-#     if not rebuild and vs_path.exists():
-#         vs = FAISS.load_local(str(vs_path), emb, allow_dangerous_deserialization=True)
-#     else:
-#         vs = FAISS.from_documents(docs, emb)
-#         vs.save_local(str(vs_path))
-#     return vs
 
 def _load_canon_foods_as_texts_metas():
     """Return (texts, metas) for canon_foods.jsonl so we can index with Chroma.from_texts."""
@@ -540,44 +460,3 @@ def build_or_load_vectorstore(docs: List[RecipeDoc], persist_dir: Path = DEFAULT
         vs = Chroma(persist_directory=str(persist_dir), embedding_function=embed)
     return vs
 
-
-
-# def build_or_load_vectorstore(docs: List[RecipeDoc], persist_dir: Path = DEFAULT_VS_DIR, rebuild: bool = False):
-#     # Multilingual embeddings (good for ES/FR/etc.)
-#     EMBED_MODEL = os.getenv("EMBED_MODEL", "sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2")
-#     embed = HuggingFaceEmbeddings(model_name=EMBED_MODEL)
-
-#     persist_dir.mkdir(parents=True, exist_ok=True)
-
-#     texts, metas = [], []
-#     for d in docs:
-#         texts.append(_doc_to_page(d))
-#         metas.append({
-#             "id": d.id, "title": d.title, "url": d.url, "source": d.source,
-#             "image_url": d.image_url,
-#             "cuisine": d.cuisine, "country": d.country, "continent": d.continent,
-#             "region": d.region, "dish_type": d.dish_type, "course": d.course,
-#             "cook_time": d.cook_time_minutes, "servings": d.servings,
-#             "popularity_score": d.popularity_score,
-#             "signals_json": json.dumps(d.signals or {}, ensure_ascii=False),
-
-#             "ingredients_json": json.dumps(d.ingredients or [], ensure_ascii=False),
-#             "steps_json": json.dumps(d.steps or [], ensure_ascii=False),
-#             "dietary_tags_json": json.dumps(d.dietary_tags or [], ensure_ascii=False),
-
-#             "ingredients_text": "; ".join(d.ingredients or []),
-#             "lang": getattr(d, "lang", "") or "",  # safe default
-#             "aliases": "",
-#         })
-
-#     # ← NEW: append canon foods
-#     canon_texts, canon_metas = _load_canon_foods_as_texts_metas()
-#     texts.extend(canon_texts)
-#     metas.extend(canon_metas)
-
-#     db_file = persist_dir / "chroma.sqlite"
-#     if rebuild or not db_file.exists():
-#         vs = Chroma.from_texts(texts=texts, embedding=embed, metadatas=metas, persist_directory=str(persist_dir))
-#     else:
-#         vs = Chroma(persist_directory=str(persist_dir), embedding_function=embed)
-#     return vs

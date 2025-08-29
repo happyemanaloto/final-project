@@ -128,7 +128,6 @@ def _apply_background():
         unsafe_allow_html=True,
     )
 
-
 def _video_html(path: Path):
     """Render a looping video if the file exists."""
     if not path.exists():
@@ -146,14 +145,6 @@ def _video_html(path: Path):
         ''',
         unsafe_allow_html=True,
     )
-
-# def remove_json_block(text: str) -> str:
-#     # Remove fenced JSON code blocks (```json … ```), if present
-#     text = re.sub(r"```json\\s*\\{[^`]*\\}```", "", text, flags=re.DOTALL | re.IGNORECASE)
-#     # Remove standalone JSON objects (e.g., { "calories": … }) if no backticks
-#     text = re.sub(r"\\{[^{}]*\\}", "", text)
-#     # Trim extra spaces left behind
-#     return " ".join(text.split())
 
 def remove_json_block(text: str) -> str:
     """
@@ -187,60 +178,6 @@ def remove_json_block(text: str) -> str:
     # Join, normalize whitespace
     cleaned = " ".join(" ".join(lines).split())
     return cleaned.strip()
-
-# def summarize_calorie_info(text: str) -> str:
-#     """
-#     Extract nutrition JSON blocks and return a clean human summary.
-#     Example:
-#       "Veggie Stir Fry per serving: ```json { 'calories':150, 'protein':4 }```"
-#     -> "Veggie Stir Fry has 150 calories, 4 g protein per serving."
-#     """
-#     if not text:
-#         return ""
-
-#     import html
-#     t = html.unescape(text)
-
-#     # Find recipe title before JSON (look for 'per serving:')
-#     title_match = re.search(r"([A-Za-z0-9 \-\(\)]+)\s+per serving", t, flags=re.IGNORECASE)
-#     title = title_match.group(1).strip() if title_match else ""
-
-#     # Grab JSON-like block (```json {...}``` or just {...})
-#     json_match = re.search(r"\{[^{}]*\}", t)
-#     if not json_match:
-#         return title or t.strip()
-
-#     raw_json = json_match.group(0)
-
-#     # Try parsing nutrition info
-#     try:
-#         data = json.loads(raw_json)
-#     except Exception:
-#         # If invalid JSON, sanitize keys manually
-#         kv_pairs = re.findall(r'"(\w+)"\s*:\s*([0-9]+)', raw_json)
-#         data = {k: v for k, v in kv_pairs}
-
-#     # Build summary sentence
-#     parts = []
-#     if "calories" in data:
-#         parts.append(f"{data['calories']} calories")
-#     if "protein" in data:
-#         parts.append(f"{data['protein']} g protein")
-#     if "carbohydrates" in data:
-#         parts.append(f"{data['carbohydrates']} g carbs")
-#     if "fat" in data:
-#         parts.append(f"{data['fat']} g fat")
-#     if "fiber" in data:
-#         parts.append(f"{data['fiber']} g fiber")
-#     if "sugar" in data:
-#         parts.append(f"{data['sugar']} g sugar")
-#     if "sodium" in data:
-#         parts.append(f"{data['sodium']} mg sodium")
-
-#     summary = ", ".join(parts)
-#     if title:
-#         return f"{title} has {summary} per serving."
-#     return summary
 
 def _naturalize_for_tts(text: str) -> str:
     """Insert light punctuation and breaks so gTTS sounds more natural."""
