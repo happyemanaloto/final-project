@@ -1,3 +1,4 @@
+from __future__ import annotations
 # --- hydrate env from Streamlit Secrets (cloud) + .env (local) ---
 import os
 try:
@@ -14,7 +15,6 @@ try:
 except Exception:
     pass
 
-from __future__ import annotations
 import json, os, re
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
