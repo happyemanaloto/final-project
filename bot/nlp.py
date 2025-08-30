@@ -80,7 +80,13 @@ def llm_zero(temperature: float | None = None, model: str | None = None):
     chosen_temp = CHEF_TEMP if temperature is None else float(temperature)
     cache_key = (chosen_model, chosen_temp)
     if cache_key not in _LLM_CACHE:
-        kwargs = {"model": chosen_model, "temperature": chosen_temp}
+        kwargs =  {
+            "model": chosen_model,
+            "temperature": chosen_temp,
+            # ↓ add these so calls don’t hang
+            "timeout": 30,          # hard cap per request
+            "max_retries": 1,       # fail fast; we’ll fallback in app
+        }
         if _tracer_cache:
             kwargs["callbacks"] = _tracer_cache
         _LLM_CACHE[cache_key] = ChatOpenAI(**kwargs)

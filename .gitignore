@@ -3,9 +3,17 @@ __pycache__/
 *.py[cod]
 .env
 .venv/
-
+.streamlit/secrets.toml
 # VSCode
 .vscode/
+data/vs/
+tmp_uploads/
+youtube/
+**/*.mp4
+**/*.part*
+**/*.ytdl
+**/__pycache__/
+*.pyc
 # build/reproducible artifacts — DO NOT COMMIT
 src/backend/scrapers/data/recipes/audio/
 data/tmp_audio/
@@ -15,3 +23,5 @@ exports/
 *.bin
 *.faiss
 *.sqlite
+.DS_Store
+Thumbs.db

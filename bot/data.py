@@ -1,10 +1,42 @@
 from __future__ import annotations
 import json, os, re
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Tuple
 from pydantic import BaseModel, Field
 from langchain_community.vectorstores import Chroma
 from langchain_openai import OpenAIEmbeddings
+from langchain_text_splitters import RecursiveCharacterTextSplitter
+from langchain.schema import Document
+# --- Embedding backend selector ---
+import os
+from dotenv import load_dotenv
+load_dotenv()  # pick up .env locally without deploy
+
+def get_embedder():
+    """
+    Returns a LangChain embeddings object based on env:
+      - EMBED_BACKEND=openai + OPENAI_API_KEY
+      - EMBED_BACKEND=local + LOCAL_EMBED_MODEL (e.g., all-MiniLM-L6-v2)
+    """
+    backend = os.getenv("EMBED_BACKEND", "openai").lower()
+    if backend == "local":
+        from langchain_community.embeddings import SentenceTransformerEmbeddings
+        model = os.getenv("LOCAL_EMBED_MODEL", "all-MiniLM-L6-v2")
+        return SentenceTransformerEmbeddings(model_name=model)
+
+    # Default: OpenAI
+    from langchain_openai import OpenAIEmbeddings
+    if not os.getenv("OPENAI_API_KEY"):
+        raise RuntimeError(
+            "OPENAI_API_KEY missing. Set it or switch to local embeddings "
+            "(EMBED_BACKEND=local, LOCAL_EMBED_MODEL=all-MiniLM-L6-v2)."
+        )
+    return OpenAIEmbeddings(
+        model=os.getenv("CHEF_EMBED_MODEL", "text-embedding-3-small"),
+        timeout=30,        # don’t hang forever
+        max_retries=1,     # fail fast
+    )
+
 # from langchain_community.embeddings import HuggingFaceEmbeddings
 # from langchain_openai import OpenAIEmbeddings
 
@@ -117,6 +149,18 @@ class RecipeDoc(BaseModel):
             self.dish_type or "",
             self.course or "",
         ]).lower()
+
+_splitter = RecursiveCharacterTextSplitter(
+    chunk_size=1200,      # ~800–1200 chars is a good start
+    chunk_overlap=150,
+    separators=["\n\n", "\n", ". ", " "]
+)
+
+def _chunk(text: str) -> list[str]:
+    text = (text or "").strip()
+    if not text:
+        return []
+    return _splitter.split_text(text)
 
 
 def _jsonl_load(path: Optional[Path]) -> List[Dict[str, Any]]:
@@ -416,47 +460,142 @@ def _doc_to_page(d: RecipeDoc) -> str:
     ]).strip()
 
 # def build_or_load_vectorstore(docs: List["RecipeDoc"], persist_dir: Path, rebuild: bool = False):
-def build_or_load_vectorstore(docs: List[RecipeDoc], persist_dir: Path = DEFAULT_VS_DIR, rebuild: bool = False):
+# def build_or_load_vectorstore(docs: List[RecipeDoc], persist_dir: Path = DEFAULT_VS_DIR, rebuild: bool = False):
+#     """
+#     Merge your scraped recipe docs with the canon and build/load a Chroma index.
+#     """
+#     # EMBED_MODEL = os.getenv("EMBED_MODEL", "sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2")
+#     # embed = HuggingFaceEmbeddings(model_name=EMBED_MODEL)
+#     embed = OpenAIEmbeddings(
+#         model=os.getenv("CHEF_EMBED_MODEL", "text-embedding-3-small"),
+#         timeout=30,
+#         max_retries=1,
+#     )
+#     persist_dir.mkdir(parents=True, exist_ok=True)
+
+#     # 1) Existing recipe docs → texts+metas
+#     texts, metas = [], []
+#     for d in docs:
+#         texts.append(_doc_to_page(d))
+#         metas.append({
+#             "id": d.id, "title": d.title, "url": d.url, "source": d.source,
+#             "image_url": d.image_url,
+#             "cuisine": d.cuisine, "country": d.country, "continent": d.continent,
+#             "region": d.region, "dish_type": d.dish_type, "course": d.course,
+#             "cook_time": d.cook_time_minutes, "servings": d.servings,
+#             "popularity_score": d.popularity_score,
+#             "signals_json": json.dumps(d.signals or {}, ensure_ascii=False),
+
+#             "ingredients_json": json.dumps(d.ingredients or [], ensure_ascii=False),
+#             "steps_json": json.dumps(d.steps or [], ensure_ascii=False),
+#             "dietary_tags_json": json.dumps(d.dietary_tags or [], ensure_ascii=False),
+
+#             "ingredients_text": "; ".join(d.ingredients or []),
+#             "lang": getattr(d, "lang", "") or "",
+#             "aliases": "",
+#         })
+
+#     # 2) Append canon
+#     canon_texts, canon_metas = _load_canon_foods_as_texts_metas()
+#     texts.extend(canon_texts)
+#     metas.extend(canon_metas)
+
+#     # 3) Build/load Chroma
+#     db_file = persist_dir / "chroma.sqlite"
+#     if rebuild or not db_file.exists():
+#         vs = Chroma.from_texts(texts=texts, embedding=embed, metadatas=metas, persist_directory=str(persist_dir))
+#     else:
+#         vs = Chroma(persist_directory=str(persist_dir), embedding_function=embed)
+#     return vs
+
+
+def build_or_load_vectorstore(
+    docs: List["RecipeDoc"],
+    persist_dir: Path = DEFAULT_VS_DIR,
+    rebuild: bool = False,
+) -> Chroma:
     """
-    Merge your scraped recipe docs with the canon and build/load a Chroma index.
+    Build or load a persistent Chroma index.
+    - Merges provided RecipeDoc pages with canonical docs.
+    - Chunks long pages to improve embedding/retrieval.
+    - Embedding backend is selected by get_embedder().
     """
-    # EMBED_MODEL = os.getenv("EMBED_MODEL", "sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2")
-    # embed = HuggingFaceEmbeddings(model_name=EMBED_MODEL)
-    embed = OpenAIEmbeddings(model=os.getenv("CHEF_EMBED_MODEL", "text-embedding-3-small"))
     persist_dir.mkdir(parents=True, exist_ok=True)
 
-    # 1) Existing recipe docs → texts+metas
-    texts, metas = [], []
-    for d in docs:
-        texts.append(_doc_to_page(d))
-        metas.append({
-            "id": d.id, "title": d.title, "url": d.url, "source": d.source,
-            "image_url": d.image_url,
-            "cuisine": d.cuisine, "country": d.country, "continent": d.continent,
-            "region": d.region, "dish_type": d.dish_type, "course": d.course,
-            "cook_time": d.cook_time_minutes, "servings": d.servings,
-            "popularity_score": d.popularity_score,
-            "signals_json": json.dumps(d.signals or {}, ensure_ascii=False),
+    # Rebuild := wipe directory to avoid stale collections
+    if rebuild and persist_dir.exists():
+        try:
+            shutil.rmtree(persist_dir)
+        except Exception:
+            pass
+        persist_dir.mkdir(parents=True, exist_ok=True)
 
-            "ingredients_json": json.dumps(d.ingredients or [], ensure_ascii=False),
-            "steps_json": json.dumps(d.steps or [], ensure_ascii=False),
-            "dietary_tags_json": json.dumps(d.dietary_tags or [], ensure_ascii=False),
+    # 1) Convert RecipeDoc -> page text + metadata
+    texts: list[str] = []
+    metas: list[dict] = []
 
-            "ingredients_text": "; ".join(d.ingredients or []),
-            "lang": getattr(d, "lang", "") or "",
-            "aliases": "",
-        })
+    for d in docs or []:
+        page = _doc_to_page(d)  # your existing formatter
+        chunks = _chunk(page)
+        if not chunks:
+            continue
+        for i, ch in enumerate(chunks):
+            texts.append(ch)
+            metas.append({
+                "id": f"{d.id}::chunk:{i}",
+                "parent_id": d.id,
+                "title": d.title,
+                "url": d.url,
+                "source": d.source,
+                "image_url": d.image_url,
+                "cuisine": d.cuisine,
+                "country": d.country,
+                "continent": d.continent,
+                "region": d.region,
+                "dish_type": d.dish_type,
+                "course": d.course,
+                "cook_time": d.cook_time_minutes,
+                "servings": d.servings,
+                "popularity_score": d.popularity_score,
+                "signals_json": json.dumps(d.signals or {}, ensure_ascii=False),
+                "ingredients_json": json.dumps(d.ingredients or [], ensure_ascii=False),
+                "steps_json": json.dumps(d.steps or [], ensure_ascii=False),
+                "dietary_tags_json": json.dumps(d.dietary_tags or [], ensure_ascii=False),
+                "ingredients_text": "; ".join(d.ingredients or []),
+                "lang": getattr(d, "lang", "") or "",
+                "aliases": "",
+            })
 
-    # 2) Append canon
+    # 2) Append canonical docs
     canon_texts, canon_metas = _load_canon_foods_as_texts_metas()
-    texts.extend(canon_texts)
-    metas.extend(canon_metas)
+    texts.extend(canon_texts or [])
+    metas.extend(canon_metas or [])
 
-    # 3) Build/load Chroma
-    db_file = persist_dir / "chroma.sqlite"
-    if rebuild or not db_file.exists():
-        vs = Chroma.from_texts(texts=texts, embedding=embed, metadatas=metas, persist_directory=str(persist_dir))
+    # 3) Filter out empties and keep lists aligned
+    keep: list[Tuple[str, dict]] = [(t, m) for t, m in zip(texts, metas) if (t or "").strip()]
+    if keep:
+        texts, metas = list(zip(*keep))
+        texts, metas = list(texts), list(metas)
     else:
-        vs = Chroma(persist_directory=str(persist_dir), embedding_function=embed)
-    return vs
+        texts, metas = [], []
 
+    # 4) Create / load Chroma
+    embed = get_embedder()
+    db_file = persist_dir / "chroma.sqlite"
+    if (texts and rebuild) or (texts and not db_file.exists()):
+        vs = Chroma.from_texts(
+            texts=texts,
+            embedding=embed,
+            metadatas=metas,
+            persist_directory=str(persist_dir),
+            collection_name="recipes",
+        )
+    else:
+        # load existing collection (may still add later in your app)
+        vs = Chroma(
+            persist_directory=str(persist_dir),
+            embedding_function=embed,
+            collection_name="recipes",
+        )
+
+    return vs

@@ -3,7 +3,6 @@ import os, json, re, datetime as dt, tempfile
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Callable
 
-import trafilatura  # pip install trafilatura
 from pydantic import BaseModel
 from langchain.tools import tool
 from langchain_core.prompts import ChatPromptTemplate
@@ -12,7 +11,8 @@ from langchain_community.vectorstores import Chroma
 from langchain_openai import OpenAIEmbeddings
 from youtube_transcript_api import YouTubeTranscriptApi, TranscriptsDisabled, NoTranscriptFound, CouldNotRetrieveTranscript
 from yt_dlp import YoutubeDL
-
+import tempfile
+import trafilatura  # pip install trafilatura
 # Local helpers
 from .nlp import ensure_reply_language, localize_ingredients, llm_zero
 
@@ -149,22 +149,45 @@ def _whisper_model():
         _WHISPER = whisper.load_model(CHEF_WHISPER_MODEL)
     return _WHISPER
 
+# def _download_audio(url: str) -> Path:
+#     """Download best audio and convert to .wav via yt-dlp+ffmpeg."""
+#     outdir = Path(tempfile.gettempdir()) / "kusina_audio"
+#     outdir.mkdir(parents=True, exist_ok=True)
+#     ydl_opts = {
+#         "format": "bestaudio/best",
+#         "outtmpl": str(outdir / "%(id)s.%(ext)s"),
+#         "postprocessors": [
+#             {"key": "FFmpegExtractAudio", "preferredcodec": "wav", "preferredquality": "192"}
+#         ],
+#         "quiet": True,
+#         "noprogress": True,
+#     }
+#     with YoutubeDL(ydl_opts) as ydl:
+#         info = ydl.extract_info(url, download=True)
+#     return outdir / f"{info.get('id')}.wav"
+
+
 def _download_audio(url: str) -> Path:
-    """Download best audio and convert to .wav via yt-dlp+ffmpeg."""
-    outdir = Path(tempfile.gettempdir()) / "kusina_audio"
-    outdir.mkdir(parents=True, exist_ok=True)
+    tmp_root = Path(tempfile.gettempdir()) / "kusina_audio"
+    tmp_root.mkdir(parents=True, exist_ok=True)
+
     ydl_opts = {
-        "format": "bestaudio/best",
-        "outtmpl": str(outdir / "%(id)s.%(ext)s"),
-        "postprocessors": [
-            {"key": "FFmpegExtractAudio", "preferredcodec": "wav", "preferredquality": "192"}
-        ],
         "quiet": True,
+        "skip_download": False,
+        "format": "bestaudio/best",
+        "outtmpl": str(tmp_root / "%(id)s.%(ext)s"),
+        "concurrent_fragment_downloads": 1,  # avoid multiple writers on Windows
+        "nopart": True,                      # don’t create .part-Frag### files
+        "windowsfilenames": True,            # Windows-safe renames
         "noprogress": True,
     }
+
+    from yt_dlp import YoutubeDL
     with YoutubeDL(ydl_opts) as ydl:
         info = ydl.extract_info(url, download=True)
-    return outdir / f"{info.get('id')}.wav"
+        fname = ydl.prepare_filename(info)
+    return Path(fname)
+
 
 def _transcribe_whisper_local(url_or_path: str) -> str:
     """Download audio (if URL) and transcribe with Whisper. Returns '' on failure."""

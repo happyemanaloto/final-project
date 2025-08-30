@@ -34,60 +34,33 @@ except Exception:
     pass
 warnings.filterwarnings("ignore", category=DeprecationWarning)
 
-RAG_LOWCONF_DISTANCE = float(os.getenv("RAG_LOWCONF_DISTANCE", "0.6"))  # FAISS: lower is better
+# RAG_LOWCONF_DISTANCE = float(os.getenv("RAG_LOWCONF_DISTANCE", "0.6"))  # FAISS: lower is better
+# Confidence & hybrid knobs (tweakable at runtime via env)
+RAG_LOWCONF_DISTANCE = float(os.getenv("RAG_LOWCONF_DISTANCE", "0.35"))  # lower is better (distance)
+RAG_MIN_MARGIN       = float(os.getenv("RAG_MIN_MARGIN", "0.08"))        # top2 - top1 must exceed this
+RAG_TOPK             = int(os.getenv("RAG_TOPK", "6"))
+HYBRID_KEYWORD_WEIGHT= float(os.getenv("HYBRID_KEYWORD_WEIGHT", "0.30")) # 0..1 blend
+
+# Optional: use RapidFuzz if available (better), otherwise fallback to difflib
+try:
+    from rapidfuzz import fuzz as _fuzz
+    def _kw_score(a: str, b: str) -> float:
+        return _fuzz.partial_ratio(a, b) / 100.0
+except Exception:
+    from difflib import SequenceMatcher as _SM
+    def _kw_score(a: str, b: str) -> float:
+        # cheap approximate text overlap
+        return _SM(None, a.lower(), b.lower()).ratio()
 
 # -------- Heuristics / regex --------
 URL_RE = re.compile(r"(https?://\S+)", re.I)
 CALORIE_TRIGGERS = r"(?:calorie|calories|kcal|nutrition|macros?|protein|carbs?|fat|kilocal)"
 
-# # -------- System Prompt --------
-# SYSTEM = SystemMessage(content="""You are Happy Kusina-Bot: a cheerful, funny home cook and nutrition coach.
-
-# Voice & style
-# - Sound human, warm, and encouraging. Use contractions and at most 1–2 emojis total (🍳🥗), not every line.
-# - Prefer short sentences and compact dash bullets. Avoid literal asterisks/markdown artifacts in output.
-# - Keep dish names in their native form when appropriate (croissant, pintxos).
-# - If a dish term appears, add a 1-line friendly definition before instructions.
-
-# Language
-# - Always reply in reply_language. Detect user/media language for retrieval, but do not change reply_language unless user requests.
-
-# Uncertainty & safety
-# - If evidence is weak or you’re unsure:
-#   1) Say you’re not fully sure.
-#   2) Ask 1–2 concise clarifying questions (origin, key ingredient, style).
-#   3) Offer a cautious best-guess: “This might be similar to ___, so you could ___”.
-# - Never fabricate precise facts when uncertain. Prefer safe, generic techniques.
-
-# Workflow
-# 1) If input has media, call transcribe_media first.
-# 2) Translate the user request (and any transcript) to English for retrieval; keep reply_language for the final answer.
-# 3) Extract preferences as JSON with keys:
-#    language, cuisine, part_of_meal, part_of_day, heavy_or_light, time_minutes, difficulty,
-#    budget, available_ingredients, servings, allergens, goals, include_ingredients, exclude_ingredients, free_text.
-# 4) If seed_recipe_id is provided, prioritize that recipe; you may summarize it directly without calling transcription.                      
-# 5) Call vector_search first using vector_search_plan (time_limit, cuisine, must_include, exclude_ingredients, avoid_allergens, display_lang). Fallback to keyword_search if needed.
-# 6) If request info is sparse, still suggest 2–3 practical, healthy recipes using common/easy-to-source ingredients in reply_language (no apologies).
-# 7) If the user asks for a specific recipe, summarize it in reply_language with title, ingredients, steps, and a tip. Use the most relevant hit from vector_search or keyword_search.
-# 8) Share the recipe's source URL and image URL if available. If no image, use a placeholder.
-# 9) When summarizing a recipe, add a one-line time estimate (‘⏱️ ~NN min’).
-# 10) If the user asks for nutrition info, call estimate_nutrition with the ingredients of the most relevant recipe.  
-# 11) If the user asks for a shopping list, call make_shopping_list with the recipes shown.
-# 12) If the user asks for a cookbook, call create_cookbook with selected recipe_ids.
-
-# Tools & follow-ups
-# - Calories/macros: if the user asks (e.g., “how many calories?”, “calorie count of X”), call estimate_nutrition with the ingredients of the most relevant recipe (use recent results if available). Answer in reply_language with compact numbers per serving.
-# - Shopping list: if the user asks for a shopping/grocery list and recipes were just shown, call make_shopping_list (recipes may be omitted; use cached hits). Respond in reply_language.
-# - Feedback: if the user gives feedback on a recipe, call add_feedback.
-# - Translation: if the user asks to translate text, call translate_text with raw_user_text (or the shown recipe text) and reply with ONLY the translated text.
-
-# Keep it concise, friendly, and helpful.
-# """)
-
+# -------- System Prompt --------
 SYSTEM = SystemMessage(content="""You are Happy Kusina-Bot: a cheerful, funny home cook and nutrition coach.
 
 Voice & style
-- Sound human, warm, and encouragin but concise. Use contractions and at most 1–2 emojis total (🍳🥗), not every line.
+- Sound human, warm, and encouraging. Use contractions and at most 1–2 emojis total (🍳🥗), not every line.
 - Prefer short sentences and compact dash bullets. Avoid literal asterisks/markdown artifacts in output.
 - Keep dish names in their native form when appropriate (croissant, pintxos).
 - If a dish term appears, add a 1-line friendly definition before instructions.
@@ -103,21 +76,64 @@ Uncertainty & safety
 - Never fabricate precise facts when uncertain. Prefer safe, generic techniques.
 
 Workflow
-1) Check  the button settings and implement.
+1) If input has media, call transcribe_media first.
 2) Translate the user request (and any transcript) to English for retrieval; keep reply_language for the final answer.
 3) Extract preferences as JSON with keys:
    language, cuisine, part_of_meal, part_of_day, heavy_or_light, time_minutes, difficulty,
    budget, available_ingredients, servings, allergens, goals, include_ingredients, exclude_ingredients, free_text.
-4) Call vector_search first using vector_search_plan (time_limit, cuisine, must_include, exclude_ingredients, avoid_allergens, display_lang). Fallback to keyword_search if needed.
-5) If request info is sparse, still suggest 2–3 practical, healthy recipes using common/easy-to-source ingredients in reply_language (no apologies).
-6) If the user asks for a specific recipe, summarize it in reply_language with title, ingredients, steps, and a tip. Use the most relevant hit from vector_search or keyword_search.
-7) When summarizing a recipe, add a one-line time estimate (‘⏱️ ~NN min’).
+4) If seed_recipe_id is provided, prioritize that recipe; you may summarize it directly without calling transcription.                      
+5) Call vector_search first using vector_search_plan (time_limit, cuisine, must_include, exclude_ingredients, avoid_allergens, display_lang). Fallback to keyword_search if needed.
+6) If request info is sparse, still suggest 2–3 practical, healthy recipes using common/easy-to-source ingredients in reply_language (no apologies).
+7) If the user asks for a specific recipe, summarize it in reply_language with title, ingredients, steps, and a tip. Use the most relevant hit from vector_search or keyword_search.
+8) Share the recipe's source URL and image URL if available. If no image, use a placeholder.
+9) When summarizing a recipe, add a one-line time estimate (‘⏱️ ~NN min’).
+10) If the user asks for nutrition info, call estimate_nutrition with the ingredients of the most relevant recipe.  
+11) If the user asks for a shopping list, call make_shopping_list with the recipes shown.
+12) If the user asks for a cookbook, call create_cookbook with selected recipe_ids.
 
 Tools & follow-ups
 - Calories/macros: if the user asks (e.g., “how many calories?”, “calorie count of X”), call estimate_nutrition with the ingredients of the most relevant recipe (use recent results if available). Answer in reply_language with compact numbers per serving.
 - Shopping list: if the user asks for a shopping/grocery list and recipes were just shown, call make_shopping_list (recipes may be omitted; use cached hits). Respond in reply_language.
+- Feedback: if the user gives feedback on a recipe, call add_feedback.
+- Translation: if the user asks to translate text, call translate_text with raw_user_text (or the shown recipe text) and reply with ONLY the translated text.
 
+Keep it concise, friendly, and helpful.
 """)
+
+# SYSTEM = SystemMessage(content="""You are Happy Kusina-Bot: a cheerful, funny home cook and nutrition coach.
+
+# Voice & style
+# - Sound human, warm, and encouragin but concise. Use contractions and at most 1–2 emojis total (🍳🥗), not every line.
+# - Prefer short sentences and compact dash bullets. Avoid literal asterisks/markdown artifacts in output.
+# - Keep dish names in their native form when appropriate (croissant, pintxos).
+# - If a dish term appears, add a 1-line friendly definition before instructions.
+
+# Language
+# - Always reply in reply_language. Detect user/media language for retrieval, but do not change reply_language unless user requests.
+
+# Uncertainty & safety
+# - If evidence is weak or you’re unsure:
+#   1) Say you’re not fully sure.
+#   2) Ask 1–2 concise clarifying questions (origin, key ingredient, style).
+#   3) Offer a cautious best-guess: “This might be similar to ___, so you could ___”.
+# - Never fabricate precise facts when uncertain. Prefer safe, generic techniques.
+
+# Workflow
+# 1) Check  the button settings and implement.
+# 2) Translate the user request (and any transcript) to English for retrieval; keep reply_language for the final answer.
+# 3) Extract preferences as JSON with keys:
+#    language, cuisine, part_of_meal, part_of_day, heavy_or_light, time_minutes, difficulty,
+#    budget, available_ingredients, servings, allergens, goals, include_ingredients, exclude_ingredients, free_text.
+# 4) Call vector_search first using vector_search_plan (time_limit, cuisine, must_include, exclude_ingredients, avoid_allergens, display_lang). Fallback to keyword_search if needed.
+# 5) If request info is sparse, still suggest 2–3 practical, healthy recipes using common/easy-to-source ingredients in reply_language (no apologies).
+# 6) If the user asks for a specific recipe, summarize it in reply_language with title, ingredients, steps, and a tip. Use the most relevant hit from vector_search or keyword_search.
+# 7) When summarizing a recipe, add a one-line time estimate (‘⏱️ ~NN min’).
+
+# Tools & follow-ups
+# - Calories/macros: if the user asks (e.g., “how many calories?”, “calorie count of X”), call estimate_nutrition with the ingredients of the most relevant recipe (use recent results if available). Answer in reply_language with compact numbers per serving.
+# - Shopping list: if the user asks for a shopping/grocery list and recipes were just shown, call make_shopping_list (recipes may be omitted; use cached hits). Respond in reply_language.
+
+# """)
 
 def maybe_lookup_term(q: str) -> str | None:
     key = (q or "").lower().strip()
@@ -178,41 +194,156 @@ def guarded_chat_once(agent, session, message: str, reply_lang: str = "en") -> s
     # AgentExecutor usually returns dict with 'output'
     return (out.get("output") if isinstance(out, dict) and "output" in out else str(out))
 
+def _is_low_conf(hits: list[tuple], abs_thresh: float, min_margin: float) -> bool:
+    """hits is [(Document, distance), ...] where lower distance is better."""
+    if not hits:
+        return True
+    d0 = float(hits[0][1])
+    if len(hits) == 1:
+        return d0 > abs_thresh
+    d1 = float(hits[1][1])
+    margin = d1 - d0                     # bigger margin means a clearer winner
+    return (d0 > abs_thresh) and (margin < min_margin)
+
+def _hybrid_rescore(query: str, hits: list[tuple], kw_weight: float) -> list[tuple]:
+    """Blend vector similarity with quick keyword/text similarity and re-order."""
+    rescored = []
+    for doc, dist in hits:
+        base_sim = max(0.0, min(1.0, 1.0 - float(dist)))   # distance→similarity
+        txt_sim  = _kw_score(query, getattr(doc, "page_content", ""))
+        combo    = (1.0 - kw_weight) * base_sim + kw_weight * txt_sim
+        rescored.append((combo, doc, dist))
+    rescored.sort(key=lambda x: x[0], reverse=True)
+    # Return in original shape but re-ordered
+    return [(doc, dist) for combo, doc, dist in rescored]
+
+# Add this helper near make_agent_chain():
+def _format_recent_history(messages, n=8) -> str:
+    if not messages:
+        return ""
+    chunk = messages[-n:]
+    lines = []
+    for m in chunk:
+        role = m.get("role") or "user"
+        txt  = (m.get("content") or "").strip().replace("\n", " ")
+        lines.append(f"{role}: {txt}")
+    return "\n".join(lines)
 
 def make_agent_chain(llm, session):
     vs = getattr(session, "vectorstore", None)
     if vs is None:
         raise RuntimeError("Session has no vectorstore. Set session.vectorstore = vs when you build it.")
 
+    # def run(q: str, lang: str):
+    #     hits = retrieve_with_scores(vs, q, k=4)
+    #     top_doc, top_dist = (hits[0] if hits else (Document(page_content=""), 1.0))
+
+    #     # Low confidence → ask the user instead of inventing
+    #     if (not hits) or (top_dist > RAG_LOWCONF_DISTANCE):
+    #         prefix = (
+    #             "No estoy seguro" if lang.startswith("es")
+    #             else "Je ne suis pas certain" if lang.startswith("fr")
+    #             else "I’m not fully sure"
+    #         )
+    #         return (
+    #             f"{prefix} what you mean by “{q}”. "
+    #             "Could you describe it (country, main ingredient, how it’s served)? "
+    #             "I’ll tailor the recipe once I know more. 😊"
+    #         )
+
+    #     # Confident → include retrieved context
+    #     ctx = "\n\n".join(f"- {d.page_content}" for d, _ in hits)
+    #     prompt = ChatPromptTemplate.from_messages([
+    #         ("system", STYLE_SYS),
+    #         ("system", "Relevant food facts:\n{context}"),
+    #         ("system", SYSTEM),
+    #         ("human", "{question}")
+    #     ])
+    #     out = (prompt | llm).invoke({"lang": lang, "context": ctx, "question": q})
+    #     return out.content
+
+    # return run
+    # def run(q: str, lang: str):
+    #     hits = retrieve_with_scores(vs, q, k=RAG_TOPK)
+
+    #     # --- 1) dynamic low-confidence check (absolute + margin) ---
+    #     if _is_low_conf(hits, RAG_LOWCONF_DISTANCE, RAG_MIN_MARGIN):
+    #         # --- 2) hybrid rescue: keyword/text rescoring of the same pool ---
+    #         hits_h = _hybrid_rescore(q, hits, HYBRID_KEYWORD_WEIGHT) if hits else []
+    #         # accept hybrid only if it improves clearly
+    #         if hits_h:
+    #             # recompute low-conf on the hybrid ordering
+    #             if not _is_low_conf(hits_h, RAG_LOWCONF_DISTANCE, RAG_MIN_MARGIN):
+    #                 hits = hits_h
+
+    #     # After hybrid attempt, check confidence again
+    #     if _is_low_conf(hits, RAG_LOWCONF_DISTANCE, RAG_MIN_MARGIN):
+    #         low = q.lower()
+    #         need = []
+    #         if not any(x in low for x in ("chicken","pork","beef","shrimp","tofu","vegetarian","veggie")):
+    #             need.append("protein (chicken / beef / shrimp / vegetarian)")
+    #         if not any(x in low for x in ("under 30","30 min","30mins","minutes","mins")):
+    #             need.append("time (under 30 min / 30–45 min)")
+    #         if not any(x in low for x in ("filipino","italian","japanese","mexican","indian","thai","chinese","greek")):
+    #             need.append("cuisine")
+    #         if not any(x in low for x in ("soy","vinegar","garlic","tomato","noodle","rice","potato","egg")):
+    #             need.append("key ingredient")
+
+    #         hints = "; ".join(need) if need else "one more detail"
+    #         prefix = (
+    #             "No estoy seguro" if lang.startswith("es")
+    #             else "Je ne suis pas certain" if lang.startswith("fr")
+    #             else "Ik ben niet zeker" if lang.startswith("nl")
+    #             else "I’m not fully sure"
+    #         )
+    #         return f"{prefix} what you mean by “{q}”. Could you specify {hints}?"
+
+    #     # --- 3) confident case → include retrieved context and answer ---
+    #     ctx = "\n\n".join(f"- {d.page_content}" for d, _ in hits[:4])
+    #     prompt = ChatPromptTemplate.from_messages([
+    #         ("system", STYLE_SYS),
+    #         ("system", "Relevant food facts:\n{context}"),
+    #         ("system", "Do not invent facts. Answer only using the context."),
+    #         ("system", SYSTEM),
+    #         ("human", "{question}")
+    #     ])
+    #     out = (prompt | llm).invoke({"lang": lang, "context": ctx, "question": q})
+    #     return out.content
     def run(q: str, lang: str):
-        hits = retrieve_with_scores(vs, q, k=4)
+        hits = retrieve_with_scores(vs, q, k=6)  # a bit wider pool helps
         top_doc, top_dist = (hits[0] if hits else (Document(page_content=""), 1.0))
 
-        # Low confidence → ask the user instead of inventing
-        if (not hits) or (top_dist > RAG_LOWCONF_DISTANCE):
+        # low-confidence check (your threshold or improved one)
+        if (not hits) or (float(top_dist) > RAG_LOWCONF_DISTANCE):
+            # (optional) ask targeted clarifying Q here instead of generic
             prefix = (
                 "No estoy seguro" if lang.startswith("es")
-                else "Je ne suis pas certain" if lang.startswith("fr")
+                else "Ik ben niet zeker" if lang.startswith("nl")
                 else "I’m not fully sure"
             )
-            return (
-                f"{prefix} what you mean by “{q}”. "
-                "Could you describe it (country, main ingredient, how it’s served)? "
-                "I’ll tailor the recipe once I know more. 😊"
-            )
+            return f"{prefix} what you mean by “{q}”. Could you specify protein and time (e.g., chicken, under 30 min)?"
 
-        # Confident → include retrieved context
-        ctx = "\n\n".join(f"- {d.page_content}" for d, _ in hits)
+        ctx = "\n\n".join(f"- {d.page_content}" for d, _ in hits[:4])
+
+        # NEW: include conversation history
+        history_txt = _format_recent_history(getattr(session, "messages", []), n=8)
+
         prompt = ChatPromptTemplate.from_messages([
             ("system", STYLE_SYS),
+            ("system", "Use the conversation history below to resolve yes/no answers, pronouns, and references."),
+            ("system", "Conversation so far:\n{history}"),
             ("system", "Relevant food facts:\n{context}"),
+            ("system", "Do not invent facts; answer only using the context."),
             ("system", SYSTEM),
             ("human", "{question}")
         ])
-        out = (prompt | llm).invoke({"lang": lang, "context": ctx, "question": q})
+        out = (prompt | llm).invoke({
+            "lang": lang,
+            "history": history_txt,
+            "context": ctx,
+            "question": q
+        })
         return out.content
-
-    return run
 
 # -------- Build the agent (with memory) --------
 def build_agent(llm, session: SessionMemory):
