@@ -29,33 +29,74 @@ from langchain.schema import Document
 # load_dotenv()  # pick up .env locally without deploy
 def get_embedder():
     """
-    Choose embeddings backend from env/Secrets.
-    - EMBED_BACKEND=local => SentenceTransformer
-    - EMBED_BACKEND=openai (default) => OpenAIEmbeddings
-      If OPENAI_API_KEY is missing, gracefully fall back to local.
+    Backends:
+      - EMBED_BACKEND=openai  -> OpenAIEmbeddings (needs OPENAI_API_KEY)
+      - EMBED_BACKEND=fastembed (recommended on Streamlit Cloud w/o key)
+      - EMBED_BACKEND=local -> SentenceTransformer (Torch); falls back to fastembed if Torch fails
     """
     backend = os.getenv("EMBED_BACKEND", "openai").lower()
 
-    # Local backend (no key needed)
+    if backend == "openai":
+        key = os.getenv("OPENAI_API_KEY")
+        if key:
+            from langchain_openai import OpenAIEmbeddings
+            return OpenAIEmbeddings(
+                model=os.getenv("CHEF_EMBED_MODEL", "text-embedding-3-small"),
+                timeout=30,
+                max_retries=1,
+            )
+        # no key → fall through to fastembed
+
+    if backend in ("fastembed", "auto"):
+        from langchain_community.embeddings.fastembed import FastEmbedEmbeddings
+        # good, small, widely supported model:
+        model = os.getenv("FASTEMBED_MODEL", "intfloat/e5-small-v2")
+        return FastEmbedEmbeddings(model_name=model)
+
     if backend == "local":
-        from langchain_community.embeddings import SentenceTransformerEmbeddings
-        model = os.getenv("LOCAL_EMBED_MODEL", "all-MiniLM-L6-v2")
-        return SentenceTransformerEmbeddings(model_name=model)
+        # Try SentenceTransformer (Torch) but auto-fallback to FastEmbed if it explodes
+        try:
+            from langchain_community.embeddings import SentenceTransformerEmbeddings
+            model = os.getenv("LOCAL_EMBED_MODEL", "all-MiniLM-L6-v2")
+            return SentenceTransformerEmbeddings(model_name=model, model_kwargs={"device": "cpu"})
+        except Exception:
+            from langchain_community.embeddings.fastembed import FastEmbedEmbeddings
+            model = os.getenv("FASTEMBED_MODEL", "intfloat/e5-small-v2")
+            return FastEmbedEmbeddings(model_name=model)
 
-    # OpenAI backend (preferred)
-    key = os.getenv("OPENAI_API_KEY")
-    if key:
-        from langchain_openai import OpenAIEmbeddings
-        return OpenAIEmbeddings(
-            model=os.getenv("CHEF_EMBED_MODEL", "text-embedding-3-small"),
-            timeout=30,
-            max_retries=1,
-        )
+    # default safety net
+    from langchain_community.embeddings.fastembed import FastEmbedEmbeddings
+    return FastEmbedEmbeddings(model_name=os.getenv("FASTEMBED_MODEL", "intfloat/e5-small-v2"))
 
-    # Safety net: auto-fallback to local if key missing
-    from langchain_community.embeddings import SentenceTransformerEmbeddings
-    model = os.getenv("LOCAL_EMBED_MODEL", "all-MiniLM-L6-v2")
-    return SentenceTransformerEmbeddings(model_name=model)
+# def get_embedder():
+#     """
+#     Choose embeddings backend from env/Secrets.
+#     - EMBED_BACKEND=local => SentenceTransformer
+#     - EMBED_BACKEND=openai (default) => OpenAIEmbeddings
+#       If OPENAI_API_KEY is missing, gracefully fall back to local.
+#     """
+#     backend = os.getenv("EMBED_BACKEND", "openai").lower()
+
+#     # Local backend (no key needed)
+#     if backend == "local":
+#         from langchain_community.embeddings import SentenceTransformerEmbeddings
+#         model = os.getenv("LOCAL_EMBED_MODEL", "all-MiniLM-L6-v2")
+#         return SentenceTransformerEmbeddings(model_name=model)
+
+#     # OpenAI backend (preferred)
+#     key = os.getenv("OPENAI_API_KEY")
+#     if key:
+#         from langchain_openai import OpenAIEmbeddings
+#         return OpenAIEmbeddings(
+#             model=os.getenv("CHEF_EMBED_MODEL", "text-embedding-3-small"),
+#             timeout=30,
+#             max_retries=1,
+#         )
+
+#     # Safety net: auto-fallback to local if key missing
+#     from langchain_community.embeddings import SentenceTransformerEmbeddings
+#     model = os.getenv("LOCAL_EMBED_MODEL", "all-MiniLM-L6-v2")
+#     return SentenceTransformerEmbeddings(model_name=model)
 
 # def get_embedder():
 #     """
