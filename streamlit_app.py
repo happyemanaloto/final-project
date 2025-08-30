@@ -23,7 +23,13 @@ import base64
 import tempfile
 from pathlib import Path
 from typing import Dict, List, Optional
-
+try:
+    from yt_dlp import YoutubeDL
+    _HAS_YTDLP = True
+except Exception:
+    YoutubeDL = None
+    _HAS_YTDLP = False
+        
 import streamlit as st
 
 from dotenv import load_dotenv  # 👈 add this
@@ -43,12 +49,15 @@ except Exception:
     HAS_GTTS = False
 
 # Import back‑end modules
-from bot.data import load_all_docs, build_or_load_vectorstore
+from bot.data import load_all_docs, build_or_load_vectorstore, DEFAULT_VS_DIR
 from bot.tools import (
     bind_vectorstore,
     bind_session_hooks,
     transcribe_local_media,
-    summarize_transcript_file,
+    summarize_transcript_file, 
+    ingest_link,
+    summarize_video,
+    transcribe_media,
 )
 from bot.session import SessionMemory
 from bot.agent import build_agent, chat_once
@@ -66,6 +75,30 @@ WELCOME_VIDEO = PROJECT_ROOT / "bot" / "favorites" / "welcomepage.mp4"
 BACKGROUND_IMG = PROJECT_ROOT / "bot" / "favorites" / "background.jpg"
 
 # ---------- Helpers ----------
+YES_WORDS = {"yes","yeah","yep","sure","ok","okay","please","go ahead","do it"}
+NO_WORDS  = {"no","nope","nah","not now","later"}
+
+def _set_pending(action: str, payload: dict | None = None):
+    st.session_state["pending_action"] = action
+    st.session_state["pending_payload"] = payload or {}
+
+def _consume_pending():
+    st.session_state.pop("pending_action", None)
+    st.session_state.pop("pending_payload", None)
+
+def _maybe_mark_offer_from_last_assistant():
+    msgs = st.session_state.get("messages", [])
+    if not msgs:
+        return
+    last = msgs[-1]
+    if last.get("role") != "assistant":
+        return
+    txt = (last.get("content") or "").lower()
+    m = re.search(r"would you like (?:the )?recipe for ([^?]+)\?", txt)
+    if m:
+        dish = m.group(1).strip()
+        _set_pending("offer_recipe", {"dish": dish})
+
 
 def _b64_file(path: Path) -> Optional[str]:
     """Read a file and return a base64 string; return None on failure."""
@@ -146,6 +179,43 @@ def _video_html(path: Path):
         unsafe_allow_html=True,
     )
 
+def _yt_id(url: str) -> str | None:
+    m = re.search(r"(?:v=|youtu\.be/)([\w\-]{6,})", url)
+    return m.group(1) if m else None
+
+@st.cache_data(show_spinner=False, ttl=24*3600)
+def _yt_title(url: str) -> str:
+    """Try to resolve the YouTube title; fall back to a friendly label."""
+    # Try yt-dlp first (fast + no API key)
+    if _HAS_YTDLP:
+        try:
+            with YoutubeDL({"quiet": True, "skip_download": True}) as ydl:
+                info = ydl.extract_info(url, download=False)
+                t = (info or {}).get("title")
+                if t:
+                    return t
+        except Exception:
+            pass
+    # Fallback: readable label from video id or URL
+    vid = _yt_id(url)
+    return f"YouTube video ({vid})" if vid else url
+
+@st.cache_data(show_spinner=False, ttl=24*3600)
+def _title_map(urls: list[str]) -> dict[str, str]:
+    """Return {title: url} mapping for a list of URLs (titles must be unique; de-dupe if needed)."""
+    mapping: dict[str, str] = {}
+    seen = set()
+    for u in urls:
+        t = _yt_title(u)
+        # de-dup titles by appending last 5 chars of id if needed
+        if t in seen:
+            suffix = (_yt_id(u) or u)[-5:]
+            t = f"{t} · {suffix}"
+        mapping[t] = u
+        seen.add(t)
+    return mapping
+
+
 def remove_json_block(text: str) -> str:
     """
     Clean assistant replies or transcripts by removing any JSON/code blocks.
@@ -178,6 +248,17 @@ def remove_json_block(text: str) -> str:
     # Join, normalize whitespace
     cleaned = " ".join(" ".join(lines).split())
     return cleaned.strip()
+
+def kb_count() -> int:
+    """Best-effort vector DB count; falls back to a session counter."""
+    vs = st.session_state.get("vs")
+    try:
+        return int(getattr(getattr(vs, "_collection", None), "count", lambda: 0)())
+    except Exception:
+        return int(st.session_state.get("kb_docs", 0))
+
+def _as_str(x) -> str:
+    return x if isinstance(x, str) else str(x)
 
 def _naturalize_for_tts(text: str) -> str:
     """Insert light punctuation and breaks so gTTS sounds more natural."""
@@ -306,7 +387,6 @@ def _init_state():
     ss = st.session_state
     ss.setdefault("messages", [])           # chat history: list of dicts {role, content}
     ss.setdefault("reply_lang", "en")       # ISO code for replies
-    ss.setdefault("translate_on", False)    # friend toggle (translate responses to reply_lang)
     ss.setdefault("langsmith_on", False)    # tracing toggle (LangSmith)
     ss.setdefault("speaker_on", False)      # speaker toggle
     ss.setdefault("last_bot_text", "")       # last assistant message
@@ -321,6 +401,17 @@ def _init_state():
     ss.setdefault("boot_done", False)       # flag to indicate backend loaded
     ss.setdefault("translate_on", True) 
 
+if "vectorstore" not in st.session_state:
+    st.session_state.vectorstore = build_or_load_vectorstore(docs=[], rebuild=False)
+
+def _kb_count(vs):
+    try:
+        return int(vs._collection.count())
+    except Exception:
+        return 0
+st.sidebar.caption(f"📚 KB docs: **{_kb_count(st.session_state.vectorstore)}**")
+st.sidebar.caption(f"🗂 Persist dir: {DEFAULT_VS_DIR}")
+
 def _boot_once():
     """Load documents, build vectorstore, wire session hooks, and build agent once."""
     ss = st.session_state
@@ -333,6 +424,7 @@ def _boot_once():
     docs = load_all_docs()
     vs = build_or_load_vectorstore(docs, rebuild=False)
     bind_vectorstore(vs)
+    ss.vectorstore = vs
     # Bind session hooks to store hits for later calorie/shopping lookups
     bind_session_hooks(session.get_hits, session.remember_hits)
     # Build the agent with an LLM; use llm_zero for minimal temperature
@@ -375,6 +467,22 @@ with left:
     # Show welcome video
     _video_html(WELCOME_VIDEO)
 
+    with st.expander("🛠 RAG Debugger"):
+        probe = st.text_input("Probe a query")
+        k = st.slider("Top-k", 1, 10, 5)
+        if st.button("Run probe"):
+            vs = st.session_state.vectorstore
+            hits = vs.similarity_search_with_score(probe, k=k)
+            rows = []
+            for i, (doc, dist) in enumerate(hits, 1):
+                rows.append({
+                    "rank": i,
+                    "distance (↓ better)": round(float(dist), 3),
+                    "preview": (getattr(doc, "page_content","") or "")[:160].replace("\n"," ") + "…",
+                })
+            st.dataframe(rows, use_container_width=True)
+
+
 with mid:
     # Autoplay pending TTS if speaker is on and audio is prepared
     if ss.speaker_on and ss.last_tts_b64:
@@ -388,7 +496,7 @@ with mid:
         st.markdown(f'<div class="chat-bubble {cls}">{msg["content"]}</div>', unsafe_allow_html=True)
 
     # Chat input: user types here
-    user_text = st.chat_input("Type a message…")
+    user_text = st.chat_input("What are you craving for…")
     if user_text:
         txt = user_text.strip()
         if txt:
@@ -433,6 +541,49 @@ with mid:
             turn_lang = ss.reply_lang if ss.translate_on else (
                 ss.session.reply_lang if (det == ss.session.reply_lang or len(txt) < 60) else det
             )
+            norm = txt.lower().strip()
+            if any(k in norm for k in ["under 30", "sub 30", "30mins", "30 minutes"]):
+                quick = (
+                    "Here are fast meals under 30 minutes:\n"
+                    "1) Garlic shrimp & rice (15 min)\n"
+                    "2) Egg & tuna fried rice (20 min)\n"
+                    "3) Chicken adobo express (25 min)\n"
+                    "4) Veggie stir-fry noodles (20 min)\n"
+                    "5) Caprese omelette & toast (12 min)"
+                )
+                st.session_state.messages.append({"role": "assistant", "content": quick})
+                st.session_state.last_bot_text = quick
+                if st.session_state.speaker_on:
+                    _gtts_to_b64(quick)
+                st.rerun()
+                st.stop() 
+            
+            # inside your text submission handler, before calling chat_once / agent
+            user_txt = (txt or "").strip().lower()
+            pending = st.session_state.get("pending_action")
+
+            if pending and user_txt in YES_WORDS:
+                # Execute the pending action
+                if pending == "offer_recipe":
+                    dish = st.session_state.get("pending_payload", {}).get("dish", "")
+                    q = f"Please give me the full recipe for {dish}."
+                    ans = chat_once(st.session_state.agent, q, reply_lang=st.session_state.reply_lang)
+                    # ans = remove_json_block(ans)
+                    st.session_state.messages.append({"role": "assistant", "content": ans})
+                    _consume_pending()
+                    if st.session_state.get("speaker_on"):
+                        _gtts_to_b64(ans)
+                    st.rerun(); st.stop()
+
+            elif pending and user_txt in NO_WORDS:
+                _consume_pending()
+                st.session_state.messages.append({"role":"assistant","content":"No problem — any other dish or cuisine?"})
+                st.rerun(); st.stop()
+
+# else: continue normal flow (call agent with the actual user text)
+
+
+
             # Call agent for answer
             ans = chat_once(ss.agent, txt, reply_lang=turn_lang)
             if ss.translate_on and turn_lang != ss.reply_lang:
@@ -526,6 +677,7 @@ with right:
 
                 summ = summarize_transcript_file.invoke({"transcript_path": str(transcript_path), "target_lang": ss.reply_lang})
                 summary_text = summ if isinstance(summ, str) else str(summ)
+                summary_text = remove_json_block(summary_text)
                 # Show summarization in chat
                 ss.messages.append({"role": "user", "content": "(Uploaded media) Please summarize ingredients and steps."})
                 ss.messages.append({"role": "assistant", "content": summary_text})
@@ -614,3 +766,126 @@ with right:
         st.rerun()
 
     st.markdown('</div>', unsafe_allow_html=True)
+
+    # with st.expander("📥 Seed knowledge base (YouTube/Web)"):
+    #     default_urls = """\
+    # https://www.youtube.com/watch?v=Gyz7s3cFjZU
+    # https://www.youtube.com/watch?v=NTpzPZajtEU
+    # https://www.youtube.com/watch?v=oPXfLnb8pFo
+    # https://www.youtube.com/watch?v=zZNhVv7fmSE
+    # https://www.youtube.com/watch?v=VRctr-tviIA
+    # https://www.youtube.com/watch?v=Swkq2jc5AnA
+    # https://www.youtube.com/watch?v=SkbOKonW6nU
+    # https://www.youtube.com/watch?v=K9qJQmOeohU
+    # https://www.youtube.com/watch?v=QlDzm8UXbk0
+    # https://www.youtube.com/watch?v=u8bdtAUpvlA"""
+    #     url_text = st.text_area("Paste one URL per line (YouTube or recipe webpages)", value=default_urls, height=180)
+    #     urls = [u.strip() for u in url_text.splitlines() if u.strip()]
+
+    #     col_a, col_b = st.columns(2)
+    #     seed_yt  = col_a.button("🎬 Ingest YouTube", use_container_width=True)
+    #     seed_web = col_b.button("🌐 Ingest Web Recipes (optional)", use_container_width=True)
+
+    #     st.caption(f"📚 KB docs (approx): **{kb_count()}**")
+
+    #     if seed_yt and urls:
+    #         ok = 0
+    #         with st.spinner("Seeding YouTube…"):
+    #             for i, u in enumerate([u for u in urls if "youtu" in u.lower()], 1):
+    #                 st.write(f"{i}. ▶️ {u}")
+    #                 try:
+    #                     out = summarize_video.invoke({"url": u, "target_lang": st.session_state.reply_lang})
+    #                     ok += 1
+    #                     st.session_state["kb_docs"] = st.session_state.get("kb_docs", 0) + 1
+    #                     st.caption(_as_str(out)[:220] + "…")
+    #                 except Exception as e:
+    #                     st.warning(f"⚠️ {u} → {e}")
+    #         st.success(f"Done: {ok} video(s) ingested. KB now ≈ {kb_count()} docs.")
+
+    #     if seed_web and urls:
+    #         ok = 0
+    #         with st.spinner("Seeding web recipes…"):
+    #             for i, u in enumerate([u for u in urls if "youtu" not in u.lower()], 1):
+    #                 st.write(f"{i}. 🌐 {u}")
+    #                 try:
+    #                     out = ingest_link.invoke({"url": u, "target_lang": st.session_state.reply_lang})
+    #                     ok += 1
+    #                     st.session_state["kb_docs"] = st.session_state.get("kb_docs", 0) + 1
+    #                     st.caption(_as_str(out)[:220] + "…")
+    #                 except Exception as e:
+    #                     st.warning(f"⚠️ {u} → {e}")
+    #         st.success(f"Done: {ok} page(s) ingested. KB now ≈ {kb_count()} docs.")
+    # imports (top of file)
+    # optional title resolver (graceful if missing)
+
+
+    # DEFAULT_YT = [
+    #     "https://www.youtube.com/watch?v=Gyz7s3cFjZU",
+    #     "https://www.youtube.com/watch?v=NTpzPZajtEU",
+    #     "https://www.youtube.com/watch?v=oPXfLnb8pFo",
+    #     "https://www.youtube.com/watch?v=zZNhVv7fmSE",
+    #     "https://www.youtube.com/watch?v=VRctr-tviIA",
+    #     "https://www.youtube.com/watch?v=Swkq2jc5AnA",
+    #     "https://www.youtube.com/watch?v=SkbOKonW6nU",
+    #     "https://www.youtube.com/watch?v=K9qJQmOeohU",
+    #     "https://www.youtube.com/watch?v=QlDzm8UXbk0",
+    #     "https://www.youtube.com/watch?v=u8bdtAUpvlA",
+    # ]
+
+    # with st.expander("🎬 Quick demo: pick a YouTube link"):
+    #     title_to_url = _title_map(DEFAULT_YT)
+    #     titles = list(title_to_url.keys())
+    #     choice_title = st.selectbox("Choose a video", titles, index=0)
+    #     choice_url = title_to_url[choice_title]
+
+    #     # optional preview thumbnail
+    #     vid = _yt_id(choice_url)
+    #     if vid:
+    #         st.image(f"https://img.youtube.com/vi/{vid}/hqdefault.jpg", width=320)
+
+    #     c1, c2 = st.columns(2)
+    #     btn_tx  = c1.button("📝 Transcript only", use_container_width=True)
+    #     btn_sum = c2.button("🧾 Summarize & add to KB", use_container_width=True)
+
+    #     if btn_tx:
+    #         try:
+    #             res = transcribe_media.invoke({"url_or_path": choice_url})
+    #             transcript = res if isinstance(res, str) else str(res)
+    #             # transcript = remove_json_block(transcript)
+    #             st.session_state.messages.append({"role": "assistant", "content": transcript or "No transcript found."})
+    #             st.session_state.last_bot_text = transcript
+    #             if st.session_state.get("speaker_on") and transcript:
+    #                 _gtts_to_b64(transcript)
+    #             st.rerun()   # if in a function, return afterwards; at top-level use st.stop()
+    #             st.stop()
+    #         except Exception as e:
+    #             st.warning(f"Transcript error: {e}")
+
+    #     if btn_sum:
+    #         try:
+    #             out = summarize_video.invoke({"url": choice_url, "target_lang": st.session_state.reply_lang})
+    #             summary = out if isinstance(out, str) else str(out)
+    #             # summary = remove_json_block(summary)
+    #             st.session_state.messages.append({"role": "assistant", "content": summary or "No summary available."})
+    #             st.session_state["kb_docs"] = st.session_state.get("kb_docs", 0) + 1
+    #             st.session_state.last_bot_text = summary
+    #             if st.session_state.get("speaker_on") and summary:
+    #                 _gtts_to_b64(summary)
+    #             st.rerun()   # if in a function, return afterwards; at top-level use st.stop()
+    #             st.stop()
+    #         except Exception as e:
+    #             st.warning(f"Summarize error: {e}")
+
+    # with st.expander("🚀 Seed entire demo list"):
+    #     if st.button("Seed all videos (summarize + upsert)", use_container_width=True):
+    #         ok = 0
+    #         prog = st.progress(0)
+    #         for i, url in enumerate(DEFAULT_YT, 1):
+    #             try:
+    #                 summarize_video.invoke({"url": url, "target_lang": st.session_state.reply_lang})
+    #                 ok += 1
+    #                 st.session_state["kb_docs"] = st.session_state.get("kb_docs", 0) + 1
+    #             except Exception as e:
+    #                 st.warning(f"⚠️ {url} → {e}")
+    #             prog.progress(int(i / len(DEFAULT_YT) * 100))
+    #         st.success(f"Seeded {ok}/{len(DEFAULT_YT)} videos. KB ≈ {st.session_state.get('kb_docs', 0)} docs.")
