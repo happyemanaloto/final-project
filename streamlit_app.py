@@ -22,7 +22,6 @@ try:
             os.environ.setdefault(str(k), str(v))
 except Exception:
     pass
-
 try:
     from dotenv import load_dotenv  # no-op in cloud if .env not present
     load_dotenv()
@@ -473,6 +472,19 @@ with st.container():
             st.rerun()
     with cols[1]:
         st.empty()
+
+    st.sidebar.caption(f"🔌 EMBED_BACKEND: **{os.getenv('EMBED_BACKEND', '(missing)')}**")
+    st.sidebar.caption(f"🔑 OPENAI key present: **{bool(os.getenv('OPENAI_API_KEY'))}**")
+
+    try:
+        st.session_state.vectorstore = build_or_load_vectorstore(docs=[], rebuild=False)
+    except Exception as e:
+        st.error(
+            "Embeddings backend is not configured. "
+            "Set Secrets (OPENAI_API_KEY or EMBED_BACKEND=local) and rerun.\n\n"
+            f"Details: {e}"
+        )
+        st.stop()
 
 # ---------- Layout: left video, middle chat, right controls ----------
 left, mid, right = st.columns([0.26, 0.60, 0.14], gap="large")
