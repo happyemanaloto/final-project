@@ -12,6 +12,8 @@
 #     when enabled.  Speech synthesis respects the current reply language.
 #   • Positions the LangSmith tracing toggle at the top left of the page.
 # --- hydrate env from Streamlit Secrets (cloud) + .env (local) ---
+
+from __future__ import annotations
 import os
 try:
     import streamlit as st  # will be available in Streamlit Cloud
@@ -26,9 +28,6 @@ try:
     load_dotenv()
 except Exception:
     pass
-
-from __future__ import annotations
-
 # import os
 import io
 import re
