@@ -23,6 +23,8 @@ try:
     from langchain_chroma import Chroma
 except Exception:
     from langchain_community.vectorstores import Chroma
+    
+from chromadb.config import Settings
 
 from langchain_openai import OpenAIEmbeddings
 from langchain_text_splitters import RecursiveCharacterTextSplitter
@@ -651,6 +653,11 @@ def build_or_load_vectorstore(
     - Embedding backend is selected by get_embedder().
     """
     persist_dir.mkdir(parents=True, exist_ok=True)
+    client_settings = Settings(
+        chroma_db_impl=os.getenv("CHROMA_DB_IMPL", "duckdb+parquet"),
+        persist_directory=str(persist_dir),          e
+        anonymized_telemetry=False,
+    )
 
     # Rebuild := wipe directory to avoid stale collections
     if rebuild and persist_dir.exists():
@@ -719,6 +726,7 @@ def build_or_load_vectorstore(
             metadatas=metas,
             persist_directory=str(persist_dir),
             collection_name="recipes",
+            client_settings=client_settings,  
         )
     else:
         # load existing collection (may still add later in your app)
@@ -726,6 +734,7 @@ def build_or_load_vectorstore(
             persist_directory=str(persist_dir),
             embedding_function=embed,
             collection_name="recipes",
+            client_settings=client_settings,  
         )
 
     return vs
