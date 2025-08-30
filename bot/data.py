@@ -1,3 +1,19 @@
+# --- hydrate env from Streamlit Secrets (cloud) + .env (local) ---
+import os
+try:
+    import streamlit as st  # will be available in Streamlit Cloud
+    for k, v in st.secrets.items():
+        if isinstance(v, (str, int, float, bool)):
+            os.environ.setdefault(str(k), str(v))
+except Exception:
+    pass
+
+try:
+    from dotenv import load_dotenv  # no-op in cloud if .env not present
+    load_dotenv()
+except Exception:
+    pass
+
 from __future__ import annotations
 import json, os, re
 from pathlib import Path
@@ -8,34 +24,63 @@ from langchain_openai import OpenAIEmbeddings
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 from langchain.schema import Document
 # --- Embedding backend selector ---
-import os
-from dotenv import load_dotenv
-load_dotenv()  # pick up .env locally without deploy
-
+# import os
+# from dotenv import load_dotenv
+# load_dotenv()  # pick up .env locally without deploy
 def get_embedder():
     """
-    Returns a LangChain embeddings object based on env:
-      - EMBED_BACKEND=openai + OPENAI_API_KEY
-      - EMBED_BACKEND=local + LOCAL_EMBED_MODEL (e.g., all-MiniLM-L6-v2)
+    Choose embeddings backend from env/Secrets.
+    - EMBED_BACKEND=local => SentenceTransformer
+    - EMBED_BACKEND=openai (default) => OpenAIEmbeddings
+      If OPENAI_API_KEY is missing, gracefully fall back to local.
     """
     backend = os.getenv("EMBED_BACKEND", "openai").lower()
+
+    # Local backend (no key needed)
     if backend == "local":
         from langchain_community.embeddings import SentenceTransformerEmbeddings
         model = os.getenv("LOCAL_EMBED_MODEL", "all-MiniLM-L6-v2")
         return SentenceTransformerEmbeddings(model_name=model)
 
-    # Default: OpenAI
-    from langchain_openai import OpenAIEmbeddings
-    if not os.getenv("OPENAI_API_KEY"):
-        raise RuntimeError(
-            "OPENAI_API_KEY missing. Set it or switch to local embeddings "
-            "(EMBED_BACKEND=local, LOCAL_EMBED_MODEL=all-MiniLM-L6-v2)."
+    # OpenAI backend (preferred)
+    key = os.getenv("OPENAI_API_KEY")
+    if key:
+        from langchain_openai import OpenAIEmbeddings
+        return OpenAIEmbeddings(
+            model=os.getenv("CHEF_EMBED_MODEL", "text-embedding-3-small"),
+            timeout=30,
+            max_retries=1,
         )
-    return OpenAIEmbeddings(
-        model=os.getenv("CHEF_EMBED_MODEL", "text-embedding-3-small"),
-        timeout=30,        # don’t hang forever
-        max_retries=1,     # fail fast
-    )
+
+    # Safety net: auto-fallback to local if key missing
+    from langchain_community.embeddings import SentenceTransformerEmbeddings
+    model = os.getenv("LOCAL_EMBED_MODEL", "all-MiniLM-L6-v2")
+    return SentenceTransformerEmbeddings(model_name=model)
+
+# def get_embedder():
+#     """
+#     Returns a LangChain embeddings object based on env:
+#       - EMBED_BACKEND=openai + OPENAI_API_KEY
+#       - EMBED_BACKEND=local + LOCAL_EMBED_MODEL (e.g., all-MiniLM-L6-v2)
+#     """
+#     backend = os.getenv("EMBED_BACKEND", "openai").lower()
+#     if backend == "local":
+#         from langchain_community.embeddings import SentenceTransformerEmbeddings
+#         model = os.getenv("LOCAL_EMBED_MODEL", "all-MiniLM-L6-v2")
+#         return SentenceTransformerEmbeddings(model_name=model)
+
+#     # Default: OpenAI
+#     from langchain_openai import OpenAIEmbeddings
+#     if not os.getenv("OPENAI_API_KEY"):
+#         raise RuntimeError(
+#             "OPENAI_API_KEY missing. Set it or switch to local embeddings "
+#             "(EMBED_BACKEND=local, LOCAL_EMBED_MODEL=all-MiniLM-L6-v2)."
+#         )
+#     return OpenAIEmbeddings(
+#         model=os.getenv("CHEF_EMBED_MODEL", "text-embedding-3-small"),
+#         timeout=30,        # don’t hang forever
+#         max_retries=1,     # fail fast
+#     )
 
 # from langchain_community.embeddings import HuggingFaceEmbeddings
 # from langchain_openai import OpenAIEmbeddings
