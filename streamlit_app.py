@@ -11,23 +11,10 @@
 #   • Includes a speaker toggle that auto‑plays the last assistant reply
 #     when enabled.  Speech synthesis respects the current reply language.
 #   • Positions the LangSmith tracing toggle at the top left of the page.
-# --- hydrate env from Streamlit Secrets (cloud) + .env (local) ---
 
 from __future__ import annotations
+
 import os
-try:
-    import streamlit as st  # will be available in Streamlit Cloud
-    for k, v in st.secrets.items():
-        if isinstance(v, (str, int, float, bool)):
-            os.environ.setdefault(str(k), str(v))
-except Exception:
-    pass
-try:
-    from dotenv import load_dotenv  # no-op in cloud if .env not present
-    load_dotenv()
-except Exception:
-    pass
-# import os
 import io
 import re
 import json
@@ -43,11 +30,11 @@ except Exception:
     YoutubeDL = None
     _HAS_YTDLP = False
         
-# import streamlit as st
+import streamlit as st
 
-# from dotenv import load_dotenv  # 👈 add this
-# # Load environment variables from .env file
-# load_dotenv()
+from dotenv import load_dotenv  # 👈 add this
+# Load environment variables from .env file
+load_dotenv()
 
 # Optional extras
 try:
@@ -472,19 +459,6 @@ with st.container():
             st.rerun()
     with cols[1]:
         st.empty()
-
-    st.sidebar.caption(f"🔌 EMBED_BACKEND: **{os.getenv('EMBED_BACKEND', '(missing)')}**")
-    st.sidebar.caption(f"🔑 OPENAI key present: **{bool(os.getenv('OPENAI_API_KEY'))}**")
-
-    try:
-        st.session_state.vectorstore = build_or_load_vectorstore(docs=[], rebuild=False)
-    except Exception as e:
-        st.error(
-            "Embeddings backend is not configured. "
-            "Set Secrets (OPENAI_API_KEY or EMBED_BACKEND=local) and rerun.\n\n"
-            f"Details: {e}"
-        )
-        st.stop()
 
 # ---------- Layout: left video, middle chat, right controls ----------
 left, mid, right = st.columns([0.26, 0.60, 0.14], gap="large")
