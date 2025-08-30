@@ -19,7 +19,11 @@ import json, os, re
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
 from pydantic import BaseModel, Field
-from langchain_community.vectorstores import Chroma
+try:
+    from langchain_chroma import Chroma
+except Exception:
+    from langchain_community.vectorstores import Chroma
+
 from langchain_openai import OpenAIEmbeddings
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 from langchain.schema import Document
