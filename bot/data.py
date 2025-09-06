@@ -594,6 +594,16 @@ def build_or_load_vectorstore(
 
 # 4) Create / load Chroma (new client API)
     embed = get_embedder()
+    for k in (
+        "CHROMA_DB_IMPL",           # e.g. "duckdb+parquet" (legacy in 1.x)
+        "CHROMA_API_IMPL",
+        "PERSIST_DIRECTORY",
+        "IS_PERSISTENT",
+        "ALLOW_RESET",
+        "ANONYMIZED_TELEMETRY",
+        "CHROMA_TELEMETRY",
+    ):
+        os.environ.pop(k, None)
     client = PersistentClient(path=str(persist_dir))  # uses DuckDB+Parquet backend
 
     # Always open (or create) the collection
