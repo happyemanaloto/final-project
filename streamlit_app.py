@@ -804,28 +804,6 @@ with mid:
                 st.session_state.messages.append({"role": "assistant", "content": "No problem — what would you like to do next?"})
                 st.rerun(); st.stop()
 
-            # if pending and user_txt in YES_WORDS:
-            #     # Execute the pending action
-            #     if pending == "offer_recipe":
-            #         dish = st.session_state.get("pending_payload", {}).get("dish", "")
-            #         q = f"Please give me the full recipe for {dish}."
-            #         ans = chat_once(st.session_state.agent, q, reply_lang=st.session_state.reply_lang)
-            #         # ans = remove_json_block(ans)
-            #         st.session_state.messages.append({"role": "assistant", "content": ans})
-            #         _consume_pending()
-            #         if st.session_state.get("speaker_on"):
-            #             _gtts_to_b64(ans)
-            #         st.rerun(); st.stop()
-
-            # elif pending and user_txt in NO_WORDS:
-            #     _consume_pending()
-            #     st.session_state.messages.append({"role":"assistant","content":"No problem — any other dish or cuisine?"})
-            #     st.rerun(); st.stop()
-
-# else: continue normal flow (call agent with the actual user text)
-
-
-
             # Call agent for answer
             ans = chat_once(ss.agent, txt, reply_lang=turn_lang)
             if ss.translate_on and turn_lang != ss.reply_lang:
