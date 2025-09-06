@@ -49,11 +49,11 @@ STATE_DIR.mkdir(parents=True, exist_ok=True)
 
 CANON_PATH = Path(__file__).resolve().parent / "canon_foods.jsonl"
 
-
 # bot/data.py – put near the top
 APP_ROOT = Path(__file__).resolve().parents[1]
 DATA_DIR = APP_ROOT / "data"
 DATA_DIR.mkdir(parents=True, exist_ok=True)
+seed_dir = APP_ROOT / "bot" / "seed"
 
 DEFAULT_YT_DIR   = DATA_DIR / "recipes"
 DEFAULT_YT_JSONL = DEFAULT_YT_DIR / "recipes.jsonl"
@@ -152,6 +152,38 @@ def _chunk(text: str) -> list[str]:
     if not text:
         return []
     return _splitter.split_text(text)
+
+def load_jsonl_texts(path: str | Path) -> tuple[list[str], list[dict]]:
+    """
+    Read a JSONL where each line is an object. We try common text keys:
+      'text', 'content', 'page_content', 'chunk', 'body'.
+    Everything else becomes metadata. Empty/short texts are skipped.
+    """
+    import json
+    p = Path(path)
+    texts, metas = [], []
+    if not p.exists():
+        return texts, metas
+    for ln in p.read_text(encoding="utf-8").splitlines():
+        if not ln.strip():
+            continue
+        try:
+            obj = json.loads(ln)
+        except Exception:
+            continue
+        text = (
+            obj.get("text")
+            or obj.get("content")
+            or obj.get("page_content")
+            or obj.get("chunk")
+            or obj.get("body")
+        )
+        if not text or not str(text).strip():
+            continue
+        meta = {k: v for k, v in obj.items() if k not in {"text","content","page_content","chunk","body"}}
+        texts.append(str(text).strip())
+        metas.append(meta)
+    return texts, metas
 
 
 def _jsonl_load(path: Optional[Path]) -> List[Dict[str, Any]]:
@@ -541,8 +573,28 @@ def build_or_load_vectorstore(
         embedding_function=embed,
     )
 
+    # coll = client.get_or_create_collection("recipes")
+    # if texts and coll.count() == 0:
+    #     vs.add_texts(texts=texts, metadatas=metas)
+
+    # return vs
+    # NEW: read the two JSONL sources
+    seed_dir = Path(__file__).resolve().parents[1] / "bot" / "seed"
+    j_texts, j_metas = [], []
+    for name in ("vs_chunks.jsonl", "vs_docs.jsonl"):
+        t, m = load_jsonl_texts(seed_dir / name)
+        j_texts += t
+        j_metas += m
+
+    # Combine with any 'docs' that your existing pipeline produced (if any)
+    all_texts = (texts or []) + j_texts
+    all_metas  = (metas  or []) + j_metas
+
+    # Add only when rebuilding (or when collection is empty) to avoid duplicates
     coll = client.get_or_create_collection("recipes")
-    if texts and coll.count() == 0:
-        vs.add_texts(texts=texts, metadatas=metas)
+    is_empty = (coll.count() == 0)
+
+    if all_texts and (rebuild or is_empty):
+        vs.add_texts(texts=all_texts, metadatas=all_metas)
 
     return vs

@@ -605,8 +605,20 @@ def _init_state():
     ss.setdefault("ctx_source", "") 
     ss.setdefault("recent_dishes", [])  # list of recently discussed dishes
 
+@st.cache_resource(show_spinner=True)
+def get_vectorstore():
+    # One-shot rebuild controlled by env var, or emptiness check inside build_or_load_vectorstore
+    auto_rebuild = os.getenv("REBUILD_VS", "0") == "1"
+    return build_or_load_vectorstore(docs=[], rebuild=auto_rebuild)
+
+st.session_state.vectorstore = get_vectorstore()
+
 if "vectorstore" not in st.session_state:
-    st.session_state.vectorstore = build_or_load_vectorstore(docs=[], rebuild=False)
+    st.session_state.vectorstore = build_or_load_vectorstore(
+        docs=[],
+        rebuild=False,
+        project_root=PROJECT_ROOT,
+    )
 
 def _kb_count(vs):
     try:
