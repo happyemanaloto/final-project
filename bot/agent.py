@@ -99,41 +99,17 @@ Tools & follow-ups
 
 Keep it concise, friendly, and helpful.
 """)
-
-# SYSTEM = SystemMessage(content="""You are Happy Kusina-Bot: a cheerful, funny home cook and nutrition coach.
-
-# Voice & style
-# - Sound human, warm, and encouragin but concise. Use contractions and at most 1–2 emojis total (🍳🥗), not every line.
-# - Prefer short sentences and compact dash bullets. Avoid literal asterisks/markdown artifacts in output.
-# - Keep dish names in their native form when appropriate (croissant, pintxos).
-# - If a dish term appears, add a 1-line friendly definition before instructions.
-
-# Language
-# - Always reply in reply_language. Detect user/media language for retrieval, but do not change reply_language unless user requests.
-
-# Uncertainty & safety
-# - If evidence is weak or you’re unsure:
-#   1) Say you’re not fully sure.
-#   2) Ask 1–2 concise clarifying questions (origin, key ingredient, style).
-#   3) Offer a cautious best-guess: “This might be similar to ___, so you could ___”.
-# - Never fabricate precise facts when uncertain. Prefer safe, generic techniques.
-
-# Workflow
-# 1) Check  the button settings and implement.
-# 2) Translate the user request (and any transcript) to English for retrieval; keep reply_language for the final answer.
-# 3) Extract preferences as JSON with keys:
-#    language, cuisine, part_of_meal, part_of_day, heavy_or_light, time_minutes, difficulty,
-#    budget, available_ingredients, servings, allergens, goals, include_ingredients, exclude_ingredients, free_text.
-# 4) Call vector_search first using vector_search_plan (time_limit, cuisine, must_include, exclude_ingredients, avoid_allergens, display_lang). Fallback to keyword_search if needed.
-# 5) If request info is sparse, still suggest 2–3 practical, healthy recipes using common/easy-to-source ingredients in reply_language (no apologies).
-# 6) If the user asks for a specific recipe, summarize it in reply_language with title, ingredients, steps, and a tip. Use the most relevant hit from vector_search or keyword_search.
-# 7) When summarizing a recipe, add a one-line time estimate (‘⏱️ ~NN min’).
-
-# Tools & follow-ups
-# - Calories/macros: if the user asks (e.g., “how many calories?”, “calorie count of X”), call estimate_nutrition with the ingredients of the most relevant recipe (use recent results if available). Answer in reply_language with compact numbers per serving.
-# - Shopping list: if the user asks for a shopping/grocery list and recipes were just shown, call make_shopping_list (recipes may be omitted; use cached hits). Respond in reply_language.
-
-# """)
+def _remember_turn(agent, user_text: str, ai_text: str) -> None:
+    """Best-effort: write the turn into the agent's memory if present."""
+    try:
+        mem = getattr(agent, "memory", None)
+        chat_mem = getattr(mem, "chat_memory", None)
+        if chat_mem:
+            chat_mem.add_user_message(user_text or "")
+            chat_mem.add_ai_message(ai_text or "")
+    except Exception:
+        # swallow memory errors; don't break the reply path
+        pass
 
 def maybe_lookup_term(q: str) -> str | None:
     key = (q or "").lower().strip()
@@ -234,81 +210,6 @@ def make_agent_chain(llm, session):
     if vs is None:
         raise RuntimeError("Session has no vectorstore. Set session.vectorstore = vs when you build it.")
 
-    # def run(q: str, lang: str):
-    #     hits = retrieve_with_scores(vs, q, k=4)
-    #     top_doc, top_dist = (hits[0] if hits else (Document(page_content=""), 1.0))
-
-    #     # Low confidence → ask the user instead of inventing
-    #     if (not hits) or (top_dist > RAG_LOWCONF_DISTANCE):
-    #         prefix = (
-    #             "No estoy seguro" if lang.startswith("es")
-    #             else "Je ne suis pas certain" if lang.startswith("fr")
-    #             else "I’m not fully sure"
-    #         )
-    #         return (
-    #             f"{prefix} what you mean by “{q}”. "
-    #             "Could you describe it (country, main ingredient, how it’s served)? "
-    #             "I’ll tailor the recipe once I know more. 😊"
-    #         )
-
-    #     # Confident → include retrieved context
-    #     ctx = "\n\n".join(f"- {d.page_content}" for d, _ in hits)
-    #     prompt = ChatPromptTemplate.from_messages([
-    #         ("system", STYLE_SYS),
-    #         ("system", "Relevant food facts:\n{context}"),
-    #         ("system", SYSTEM),
-    #         ("human", "{question}")
-    #     ])
-    #     out = (prompt | llm).invoke({"lang": lang, "context": ctx, "question": q})
-    #     return out.content
-
-    # return run
-    # def run(q: str, lang: str):
-    #     hits = retrieve_with_scores(vs, q, k=RAG_TOPK)
-
-    #     # --- 1) dynamic low-confidence check (absolute + margin) ---
-    #     if _is_low_conf(hits, RAG_LOWCONF_DISTANCE, RAG_MIN_MARGIN):
-    #         # --- 2) hybrid rescue: keyword/text rescoring of the same pool ---
-    #         hits_h = _hybrid_rescore(q, hits, HYBRID_KEYWORD_WEIGHT) if hits else []
-    #         # accept hybrid only if it improves clearly
-    #         if hits_h:
-    #             # recompute low-conf on the hybrid ordering
-    #             if not _is_low_conf(hits_h, RAG_LOWCONF_DISTANCE, RAG_MIN_MARGIN):
-    #                 hits = hits_h
-
-    #     # After hybrid attempt, check confidence again
-    #     if _is_low_conf(hits, RAG_LOWCONF_DISTANCE, RAG_MIN_MARGIN):
-    #         low = q.lower()
-    #         need = []
-    #         if not any(x in low for x in ("chicken","pork","beef","shrimp","tofu","vegetarian","veggie")):
-    #             need.append("protein (chicken / beef / shrimp / vegetarian)")
-    #         if not any(x in low for x in ("under 30","30 min","30mins","minutes","mins")):
-    #             need.append("time (under 30 min / 30–45 min)")
-    #         if not any(x in low for x in ("filipino","italian","japanese","mexican","indian","thai","chinese","greek")):
-    #             need.append("cuisine")
-    #         if not any(x in low for x in ("soy","vinegar","garlic","tomato","noodle","rice","potato","egg")):
-    #             need.append("key ingredient")
-
-    #         hints = "; ".join(need) if need else "one more detail"
-    #         prefix = (
-    #             "No estoy seguro" if lang.startswith("es")
-    #             else "Je ne suis pas certain" if lang.startswith("fr")
-    #             else "Ik ben niet zeker" if lang.startswith("nl")
-    #             else "I’m not fully sure"
-    #         )
-    #         return f"{prefix} what you mean by “{q}”. Could you specify {hints}?"
-
-    #     # --- 3) confident case → include retrieved context and answer ---
-    #     ctx = "\n\n".join(f"- {d.page_content}" for d, _ in hits[:4])
-    #     prompt = ChatPromptTemplate.from_messages([
-    #         ("system", STYLE_SYS),
-    #         ("system", "Relevant food facts:\n{context}"),
-    #         ("system", "Do not invent facts. Answer only using the context."),
-    #         ("system", SYSTEM),
-    #         ("human", "{question}")
-    #     ])
-    #     out = (prompt | llm).invoke({"lang": lang, "context": ctx, "question": q})
-    #     return out.content
     def run(q: str, lang: str):
         hits = retrieve_with_scores(vs, q, k=6)  # a bit wider pool helps
         top_doc, top_dist = (hits[0] if hits else (Document(page_content=""), 1.0))
@@ -486,63 +387,126 @@ def chat_once(agent, user_text: str, reply_lang: str) -> str:
       - URL only       -> ingest_link
       - 'calories'     -> use session hits or synthesize from last AI; then estimate
       - else           -> agent flow (has conversation memory)
+    IMPORTANT: Every route writes (user_text, ai_answer) into memory so the next
+    turn can say "translate that", "yes", "calories for that", etc.
+    intent = _translation_intent(user_text)
     """
-    # 0) TRANSLATION SHORT-CIRCUIT
-    # intent = _translation_intent(user_text)
+    answer = None  # we'll set this in a branch and finalize at the end
+
+    # ---- 0) Translation short-circuit (but still remembered) ----
+    intent = _translation_intent(user_text)
     # if intent:
     #     lang_code = LANG_ALIASES.get(intent["lang_name"])
     #     if not lang_code:
-    #         return ensure_reply_language("Which language should I translate to?", reply_lang)
+    #         # Not a known language after all — treat as a normal message.
+    #         intent = None
+    #     else:
+    #         payload = intent["payload"]
+    #         if not payload or payload.lower() in {"this", "that", "them", "it", "above", "previous", "previous recipes", "those"}:
+    #             payload = _get_last_ai_text(agent)
+    #         if not payload:
+    #             return ensure_reply_language("Paste the text you want me to translate. 🙂", reply_lang)
+    #         out = translate_text.invoke({"text": payload, "target_lang": lang_code})
+    #         return out if isinstance(out, str) else str(out)
 
-    #     payload = intent["payload"]
-    #     # If payload missing or pronoun, translate the last assistant message
-    #     if not payload or payload.lower() in {"this", "that", "them", "it", "above", "previous", "previous recipes", "those"}:
-    #         payload = _get_last_ai_text(agent)
+    # # 1) URL routing
+    # url = _extract_url(user_text)
 
-    #     if not payload:
-    #         return ensure_reply_language("Paste the text you want me to translate. 🙂", reply_lang)
+    # # 1a) URL + calories
+    # if url and re.search(CALORIE_TRIGGERS, user_text, flags=re.I):
+    #     res = calories_from_url.invoke({
+    #         "url": url,
+    #         "servings": 1,
+    #         "locale": "EU" if reply_lang.lower() not in {"en-us", "arz"} else "US",
+    #         "target_lang": reply_lang
+    #     })
+    #     return res if isinstance(res, str) else str(res)
 
-    #     out = translate_text.invoke({"text": payload, "target_lang": lang_code})
-    #     return out if isinstance(out, str) else str(out)
-    intent = _translation_intent(user_text)
+    # # 1b) URL only: ingest and cache hit
+    # if url:
+    #     res = ingest_link.invoke({"url": url, "target_lang": reply_lang})
+    #     return res if isinstance(res, str) else str(res)
+
+    # # 2) Calories short-circuit (no URL)
+    # if re.search(CALORIE_TRIGGERS, user_text, flags=re.I):
+    #     hits = _session_get_hits()
+
+    #     # If no cached hits (typical after ideas), synthesize from last AI text
+    #     if not hits:
+    #         hits = _cache_from_last_ai_text(agent, reply_lang)
+
+    #     if hits:
+    #         lines = []
+    #         for h in hits[:2]:
+    #             ings = h.get("ingredients") or []
+    #             if isinstance(ings, str):
+    #                 ings = [ings]
+    #             if not ings:
+    #                 continue
+    #             try:
+    #                 est = estimate_nutrition.invoke({
+    #                     "ingredients": ings,
+    #                     "servings": 1,
+    #                     "locale": "EU" if reply_lang.lower() not in {"en-us", "arz"} else "US"
+    #                 })
+    #                 est_txt = est if isinstance(est, str) else str(est)
+    #                 title = h.get("title") or "Dish"
+    #                 lines.append(f"{title} per serving:\n{est_txt}")
+    #             except Exception:
+    #                 continue
+
+    #         if lines:
+    #             return ensure_reply_language("\n\n".join(lines), reply_lang)
+
+    # # 3) Normal agent path (with memory)
+    # directive = {"reply_language": reply_lang, "raw_user_text": user_text}
+    # res = agent.invoke({"input": json.dumps(directive, ensure_ascii=False)})
+    # answer = res.get("output", str(res)) if isinstance(res, dict) else str(res)
+
+    # # Cache the dishes mentioned in this reply so they can be used for calories/shopping
+    # try:
+    #     _cache_from_last_ai_text(agent, reply_lang)
+    # except Exception:
+    #     pass
+
+    # return ensure_reply_language(answer, reply_lang)
+
     if intent:
         lang_code = LANG_ALIASES.get(intent["lang_name"])
-        if not lang_code:
-            # Not a known language after all — treat as a normal message.
-            intent = None
-        else:
+        if lang_code:
             payload = intent["payload"]
             if not payload or payload.lower() in {"this", "that", "them", "it", "above", "previous", "previous recipes", "those"}:
-                payload = _get_last_ai_text(agent)
+                payload = _get_last_ai_text(agent)  # looks in memory; now this will work even after tool paths
             if not payload:
-                return ensure_reply_language("Paste the text you want me to translate. 🙂", reply_lang)
-            out = translate_text.invoke({"text": payload, "target_lang": lang_code})
-            return out if isinstance(out, str) else str(out)
+                answer = ensure_reply_language("Paste the text you want me to translate. 🙂", reply_lang)
+            else:
+                out = translate_text.invoke({"text": payload, "target_lang": lang_code})
+                answer = out if isinstance(out, str) else str(out)
 
-    # 1) URL routing
-    url = _extract_url(user_text)
+    # ---- 1) URL routing ----
+    if answer is None:
+        url = _extract_url(user_text)
 
-    # 1a) URL + calories
-    if url and re.search(CALORIE_TRIGGERS, user_text, flags=re.I):
-        res = calories_from_url.invoke({
-            "url": url,
-            "servings": 1,
-            "locale": "EU" if reply_lang.lower() not in {"en-us", "arz"} else "US",
-            "target_lang": reply_lang
-        })
-        return res if isinstance(res, str) else str(res)
+        # 1a) URL + calories
+        if url and re.search(CALORIE_TRIGGERS, user_text, flags=re.I):
+            res = calories_from_url.invoke({
+                "url": url,
+                "servings": 1,
+                "locale": "EU" if reply_lang.lower() not in {"en-us", "arz"} else "US",
+                "target_lang": reply_lang
+            })
+            answer = res if isinstance(res, str) else str(res)
 
-    # 1b) URL only: ingest and cache hit
-    if url:
-        res = ingest_link.invoke({"url": url, "target_lang": reply_lang})
-        return res if isinstance(res, str) else str(res)
+        # 1b) URL only: ingest and cache hit
+        elif url:
+            res = ingest_link.invoke({"url": url, "target_lang": reply_lang})
+            answer = res if isinstance(res, str) else str(res)
 
-    # 2) Calories short-circuit (no URL)
-    if re.search(CALORIE_TRIGGERS, user_text, flags=re.I):
+    # ---- 2) Calories short-circuit (no URL) ----
+    if answer is None and re.search(CALORIE_TRIGGERS, user_text, flags=re.I):
         hits = _session_get_hits()
-
-        # If no cached hits (typical after ideas), synthesize from last AI text
         if not hits:
+            # If no cached hits (typical after non-recipe ideas), synthesize from last AI
             hits = _cache_from_last_ai_text(agent, reply_lang)
 
         if hits:
@@ -566,18 +530,34 @@ def chat_once(agent, user_text: str, reply_lang: str) -> str:
                     continue
 
             if lines:
-                return ensure_reply_language("\n\n".join(lines), reply_lang)
+                answer = "\n\n".join(lines)
+                answer = ensure_reply_language(answer, reply_lang)
 
-    # 3) Normal agent path (with memory)
-    directive = {"reply_language": reply_lang, "raw_user_text": user_text}
-    res = agent.invoke({"input": json.dumps(directive, ensure_ascii=False)})
-    answer = res.get("output", str(res)) if isinstance(res, dict) else str(res)
+    # ---- 3) Normal agent path (with memory) ----
+    if answer is None:
+        # Option A (keep your JSON directive to minimize changes)
+        directive = {"reply_language": reply_lang, "raw_user_text": user_text}
+        res = agent.invoke({"input": json.dumps(directive, ensure_ascii=False)})
+        answer = res.get("output", str(res)) if isinstance(res, dict) else str(res)
 
-    # Cache the dishes mentioned in this reply so they can be used for calories/shopping
+        # Option B (cleaner memory): pass plain text (uncomment if your prompt doesn't require JSON)
+        # res = agent.invoke({"input": user_text})
+        # answer = res.get("output", str(res)) if isinstance(res, dict) else str(res)
+
+    # ---- 4) Post-process + write to memory (for EVERY route) ----
+    try:
+        cleaned = remove_json_block(answer)
+    except Exception:
+        cleaned = answer or ""
+    final = ensure_reply_language(cleaned, reply_lang)
+
+    # Write this turn to memory so "translate that / yes / calories for that" works after tool-only routes
+    _remember_turn(agent, user_text, final)
+
+    # Keep your existing hit caching, now that memory has the latest AI text
     try:
         _cache_from_last_ai_text(agent, reply_lang)
     except Exception:
         pass
 
-    return ensure_reply_language(answer, reply_lang)
-
+    return final

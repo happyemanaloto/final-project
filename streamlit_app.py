@@ -14,13 +14,7 @@
 
 from __future__ import annotations
 
-import os
-import io
-import re
-import json
-import time
-import base64
-import tempfile
+import os, io, re, json, time, base64, tempfile, hashlib
 from pathlib import Path
 from typing import Dict, List, Optional
 try:
@@ -58,6 +52,8 @@ from bot.tools import (
     ingest_link,
     summarize_video,
     transcribe_media,
+    estimate_nutrition,
+    make_shopping_list
 )
 from bot.session import SessionMemory
 from bot.agent import build_agent, chat_once
@@ -106,6 +102,145 @@ def _b64_file(path: Path) -> Optional[str]:
         return base64.b64encode(path.read_bytes()).decode("ascii")
     except Exception:
         return None
+import difflib
+
+def _extract_dishes(text: str) -> list[str]:
+    """Heuristically pull dish names from a user/assistant turn."""
+    if not text:
+        return []
+    t = text.strip()
+    # Prefer “title line” if assistant just wrote a recipe card.
+    first = t.splitlines()[0].strip(": ").lower()
+    # Common trigger patterns
+    pats = [
+        r"(?:recipe for|make|cook|how to make)\s+([A-Za-z][\w\s\-']{2,})",
+        r"\b(?:pasta|adobo|biryani|ramen|pad thai|fried rice|carbonara|bolognese|aglio e olio|pesto|alfredo|noodles)\b",
+    ]
+    found: list[str] = []
+    for p in pats:
+        m = re.search(p, t, flags=re.I)
+        if m:
+            g = m.group(1) if m.lastindex else m.group(0)
+            if g: found.append(g.strip().title())
+    # Title-ish first line (e.g., "Spaghetti Aglio e Olio — Serves 4")
+    if len(first) <= 60 and any(k in first for k in ["pasta","adobo","biry","ramen","rice","noodle","spag","penne","pad thai","pesto","carbon","bolo","aglio","olio","alfredo"]):
+        found.append(first.title())
+    # Unique, preserve order
+    out = []
+    for x in found:
+        if x not in out:
+            out.append(x)
+    return out[:3]
+
+def _update_recent_dishes(new_items: list[str]):
+    ss = st.session_state
+    if not new_items: return
+    lst = ss.get("recent_dishes", [])
+    for dish in new_items:
+        # move-to-front if exists, else insert
+        if dish in lst:
+            lst.remove(dish)
+        lst.insert(0, dish)
+    ss["recent_dishes"] = lst[:3]
+
+def _best_hit_for_title(title: str) -> dict:
+    """Pick the closest 'hit' (recipe struct) for a title from session hits."""
+    hits = ss.session.get_hits() if ss.session else []
+    if not hits:
+        return {}
+    # direct match
+    for h in hits:
+        if (h.get("title") or "").strip().lower() == title.strip().lower():
+            return h
+    # fuzzy title match
+    titles = [(h, h.get("title","")) for h in hits]
+    best = max(titles, key=lambda tup: difflib.SequenceMatcher(None, title.lower(), (tup[1] or "").lower()).ratio())
+    return best[0] if best and best[1] else {}
+
+
+def _ensure_hit_for_dish(title: str) -> dict:
+    """Ensure we have a minimal recipe 'hit' (title + ingredients) for a dish name."""
+    hit = _best_hit_for_title(title)
+    if hit and (hit.get("ingredients") or hit.get("ingredients_display")):
+        return hit
+
+    # Ask the model for a minimal ingredient list, then cache it as a session hit
+    prompt = ChatPromptTemplate.from_messages([
+        ("system", "List 8–12 core ingredients for the dish. Plain list, one per line. No steps."),
+        ("human", f"Dish: {title}")
+    ])
+    out = (prompt | llm_zero(temperature=0)).invoke({})
+    ings = [ln.strip("-• ").strip() for ln in out.content.splitlines() if ln.strip()][:12]
+    minimal = {
+        "id": f"user:{title}",
+        "title": title,
+        "url": "",
+        "source": "user",
+        "ingredients": ings,
+        "ingredients_display": ings,
+        "steps": [],
+    }
+    if ss.session:
+        ss.session.remember_hits([minimal])
+    return minimal
+
+def _format_nutrition(answer_json: str) -> str:
+    """Format the JSON-ish nutrition text into a single clean line."""
+    try:
+        data = json.loads(answer_json)
+        parts = []
+        def g(k, unit): 
+            v = data.get(k)
+            if v is None: return None
+            try: v = float(v)
+            except: pass
+            return f"{k.capitalize()}: {v}{unit}"
+        parts.append(g("calories"," kcal"))
+        parts.append(g("protein"," g"))
+        parts.append(g("carbohydrates"," g"))
+        parts.append(g("fat"," g"))
+        if data.get("fiber") is not None: parts.append(g("fiber"," g"))
+        if data.get("sugar") is not None: parts.append(g("sugar"," g"))
+        if data.get("sodium") is not None: parts.append(g("sodium"," mg"))
+        parts = [p for p in parts if p]
+        return " · ".join(parts)
+    except Exception:
+        # fallback: strip code fences/braces if model returned text
+        s = re.sub(r"```[\s\S]*?```", "", answer_json)
+        s = re.sub(r"^\s*\{|\}\s*$", "", s).strip()
+        return s
+# --- Intent detection (mic / uploads / chat) ---
+INTENT_PATTERNS = {
+    "calories": [
+        r"\bcalories?\b", r"\bcalorie count\b", r"\bmacros?\b",
+        r"\bnutrition(?:al)?\b", r"\bper[-\s]?serving\b"
+    ],
+    "shopping_list": [
+        r"\bshopping list\b", r"\bgrocery list\b",
+        r"\blista de compra(s)?\b", r"\bmarket list\b"
+    ],
+    "recipe": [
+        r"\brecipe\b", r"\breceta\b",
+        r"\bhow (?:to|do i) (?:make|cook)\b",
+        r"\bsteps?\b"
+    ],
+}
+
+def _detect_intent(text: str) -> str:
+    t = (text or "").lower()
+    for name, pats in INTENT_PATTERNS.items():
+        if any(re.search(p, t) for p in pats):
+            return name
+    return ""
+
+def _build_augmented_query(transcript: str, source_label: str, task_prompt: str, user_q: str | None = None) -> str:
+    base = (
+        "Prefer the transcript facts below. If minor details are missing, fill sensible defaults; "
+        "if the key fact truly isn’t present, say so briefly. "
+        "Respond in plain text only (no JSON, no code blocks).\n\n"
+        f"--- transcript ({source_label}) ---\n{transcript}\n--- end transcript ---\n\n"
+    )
+    return base + (user_q or task_prompt)
 
 def _apply_background():
     """Apply a page background image and custom CSS for chat bubbles and controls."""
@@ -156,10 +291,93 @@ def _apply_background():
             min-height: 44px !important;
             height: 44px !important;
         }}
+
         </style>
         """,
         unsafe_allow_html=True,
     )
+# def _apply_background():
+#     """Apply a page background image and custom CSS for chat bubbles and controls."""
+#     b64 = _b64_file(BACKGROUND_IMG) if BACKGROUND_IMG.exists() else None
+#     mime = "image/png" if BACKGROUND_IMG.suffix.lower() == ".png" else "image/jpeg"
+
+#     # 1) Main CSS (f-string) — all CSS braces must be doubled {{ }}
+#     bg_rule = (
+#         f"background: url('data:{mime};base64,{b64}') center center / cover no-repeat fixed !important;"
+#         if b64 else ""
+#     )
+#     st.markdown(
+#         f"""
+#         <style>
+#         [data-testid="stAppViewContainer"] {{
+#             {bg_rule}
+#         }}
+#         [data-testid="stHeader"], [data-testid="stToolbar"] {{ background: transparent !important; }}
+#         .block-container {{
+#             background: transparent !important;
+#             padding-top: 5.8rem !important;
+#             padding-bottom: 1rem !important;
+#         }}
+#         /* Chat bubbles */
+#         .chat-bubble {{
+#             max-width: 78%;
+#             padding: 14px 16px;
+#             border: 2px solid #000;
+#             border-radius: 18px;
+#             background: #f8fff0;
+#             color: #111;
+#             margin: 8px 0 8px 0;
+#         }}
+#         .chat-bubble.user {{
+#             margin-left: auto;
+#             font-style: italic;
+#             font-weight: 700;
+#         }}
+#         .chat-bubble.bot {{
+#             margin-right: auto;
+#             font-family: cursive;
+#         }}
+#         /* Right rail sticky */
+#         .right-rail {{ position: sticky; top: 6rem; }}
+#         /* Icon button styling */
+#         .icon-btn button {{
+#             height: 44px; font-size: 22px;
+#             background: #f8fff0 !important;
+#             color: #000 !important;
+#             border: 1px solid #000 !important;
+#         }}
+#         /* Dropdown height */
+#         .stSelectbox div[data-baseweb="select"] > div {{
+#             min-height: 44px !important;
+#             height: 44px !important;
+#         }}
+#         </style>
+#         """,
+#         unsafe_allow_html= True,
+#     )
+
+#     # 2) Flash animation CSS (plain string, NOT an f-string) — no brace escaping needed
+#     st.markdown(
+#         """
+#         <style>
+#         /* Flash box for current dish */
+#         .focus-box {
+#           border: 2px solid #000;
+#           background: #fffbd1;
+#           padding: 12px 14px;
+#           border-radius: 12px;
+#           margin-bottom: 10px;
+#           animation: pulse 1.4s ease-in-out 2;
+#         }
+#         @keyframes pulse {
+#           0% { box-shadow: 0 0 0 0 rgba(255,200,0,.7); }
+#           70% { box-shadow: 0 0 0 12px rgba(255,200,0, 0); }
+#           100% { box-shadow: 0 0 0 0 rgba(255,200,0, 0); }
+#         }
+#         </style>
+#         """,
+#         unsafe_allow_html=True,
+#     )
 
 def _video_html(path: Path):
     """Render a looping video if the file exists."""
@@ -400,6 +618,9 @@ def _init_state():
     ss.setdefault("agent", None)            # agent instance
     ss.setdefault("boot_done", False)       # flag to indicate backend loaded
     ss.setdefault("translate_on", True) 
+    ss.setdefault("ctx_text", "") 
+    ss.setdefault("ctx_source", "") 
+    ss.setdefault("recent_dishes", [])  # list of recently discussed dishes
 
 if "vectorstore" not in st.session_state:
     st.session_state.vectorstore = build_or_load_vectorstore(docs=[], rebuild=False)
@@ -502,6 +723,7 @@ with mid:
         if txt:
             # Append user message
             ss.messages.append({"role": "user", "content": txt})
+            _update_recent_dishes(_extract_dishes(txt))
             # Check for language switch commands
             maybe = parse_language_switch(txt)
             if maybe:
@@ -528,6 +750,7 @@ with mid:
                 pretty = pretty_map.get(new_lang, new_lang)
                 conf_msg = ensure_reply_language(f"Okay! I’ll reply in {pretty} from now on.", new_lang)
                 ss.messages.append({"role": "assistant", "content": conf_msg})
+                _update_recent_dishes(_extract_dishes(conf_msg))
                 ss.last_bot_text = conf_msg
                 # Pre‑generate TTS if speaker is on
                 if ss.speaker_on:
@@ -592,6 +815,7 @@ with mid:
             # ans = remove_json_block(ans)
             # Append assistant reply
             ss.messages.append({"role": "assistant", "content": ans})
+            _update_recent_dishes(_extract_dishes(ans))
             ss.last_bot_text = ans
             # Pre‑generate TTS if speaker is on
             if ss.speaker_on:
@@ -623,7 +847,32 @@ with right:
     # # Friend toggle (translate all replies)
     # if st.button("友", use_container_width=True, help="Toggle translation of replies into chosen language"):
     #     ss.translate_on = not ss.translate_on
+    
+    # # Speaker toggle (shows ON/OFF; pre‑generates TTS when turning on)
+    # speaker_label = "🔊 Speaker: ON" if ss.speaker_on else "🔈 Speaker: OFF"
+    # if st.button(speaker_label, use_container_width=True):
+    #     ss.speaker_on = not ss.speaker_on
+    #     if ss.speaker_on:
+    #         # Pre-generate audio for the most recent bot reply if available
+    #         if ss.last_bot_text:
+    #             b64 = _gtts_to_b64(ss.last_bot_text)
+    #             if b64:
+    #                 ss.last_tts_b64 = b64
+    #     else:
+    #         ss.last_tts_b64 = None
+    #     st.rerun()
+        # Speaker as a toggle with a stable key
+    new_speaker = st.toggle("🔈 Auto-speak last reply", value=ss.speaker_on, key="speaker_toggle")
+    if new_speaker != ss.speaker_on:
+        ss.speaker_on = new_speaker
+        if ss.speaker_on and ss.last_bot_text:
+            b64 = _gtts_to_b64(ss.last_bot_text)
+            ss.last_tts_b64 = b64 if b64 else None
+        else:
+            ss.last_tts_b64 = None
+        st.rerun()
 
+    st.markdown('</div>', unsafe_allow_html=True)
     # Upload toggle (show/hide uploader)
     if st.button("➕", use_container_width=True, help="Upload audio/video to transcribe & summarize"):
         ss.show_upload = not ss.show_upload
@@ -674,18 +923,42 @@ with right:
                     print(clean_transcript)  # or use st.text(clean_transcript) to display in the app
                 except Exception:
                     pass
-
+                
                 summ = summarize_transcript_file.invoke({"transcript_path": str(transcript_path), "target_lang": ss.reply_lang})
                 summary_text = summ if isinstance(summ, str) else str(summ)
                 summary_text = remove_json_block(summary_text)
                 # Show summarization in chat
-                ss.messages.append({"role": "user", "content": "(Uploaded media) Please summarize ingredients and steps."})
+                ss.messages.append({"role": "user", "content": "(Uploaded media)"})
                 ss.messages.append({"role": "assistant", "content": summary_text})
+                _update_recent_dishes(_extract_dishes(summary_text))
+                ss.messages.append({"role": "assistant",
+                                    "content": "What would you like to know about this transcript? Ask me a question and I’ll answer from it."})
                 ss.last_bot_text = summary_text
                 if ss.speaker_on:
                     b64tts = _gtts_to_b64(summary_text)
                     if b64tts:
                         ss.last_tts_b64 = b64tts
+                st.rerun()
+
+                # Determine language for this turn
+                det = detect_language(summary_text)
+                turn_lang = ss.reply_lang if ss.translate_on else (
+                    ss.session.reply_lang if (det == ss.session.reply_lang or len(clean_transcript) < 60) else det
+                )
+
+                # Call agent for answer
+                ans = chat_once(ss.agent, summary_text, reply_lang=turn_lang)
+                if ss.translate_on and turn_lang != ss.reply_lang:
+                    ans = ensure_reply_language(ans, ss.reply_lang)
+                # Append assistant reply
+                ss.messages.append({"role": "assistant", "content": ans})
+                _update_recent_dishes(_extract_dishes(ans))
+                ss.last_bot_text = ans
+                # Pre‑generate TTS if speaker is on
+                if ss.speaker_on:
+                    b64 = _gtts_to_b64(ans)
+                    if b64:
+                        ss.last_tts_b64 = b64
                 st.rerun()
             except Exception as e:
                 ss.messages.append({"role": "assistant", "content": ensure_reply_language(f"Upload error: {e}", ss.reply_lang)})
@@ -702,190 +975,113 @@ with right:
             ss.show_rec_player = True
         # Playback controls
         if ss.show_rec_player and ss.rec_b64:
-            pcols = st.columns(2)
-            if pcols[0].button("▶️ Play Recording", use_container_width=True):
-                _play_audio_controls(ss.rec_b64, ss.rec_mime)
-            if pcols[1].button("⏹ Stop Playback", use_container_width=True):
-                st.rerun()
-            # Transcribe button
-            if st.button("📝 Transcribe", use_container_width=True):
+            # pcols = st.columns(2)
+            # if pcols[0].button("▶️ Play Recording", use_container_width=True):
+            #     _play_audio_controls(ss.rec_b64, ss.rec_mime)
+            # if pcols[1].button("⏹ Stop Playback", use_container_width=True):
+            #     st.rerun()
+            # # Transcribe button
+            # # if st.button("📝 Transcribe", use_container_width=True):
+            try:
+                fpath = _save_temp_file(ss.rec_b64, suffix=".wav")
+                res = transcribe_local_media.invoke({"path": fpath})
+                if isinstance(res, str):
+                    res_json = json.loads(res)
+                else:
+                    res_json = res
+                if res_json.get("error"):
+                    ss.messages.append({"role": "assistant", "content": ensure_reply_language(f"Transcription failed: {res_json['error']}", ss.reply_lang)})
+                    st.rerun()
+                transcript_path = Path(res_json.get("transcript_path", ""))
+                if not transcript_path.is_absolute():
+                    transcript_path = (PROJECT_ROOT / transcript_path).resolve()
+
+                # Load the raw transcript and remove JSON nutrition blocks before summarization
                 try:
-                    fpath = _save_temp_file(ss.rec_b64, suffix=".wav")
-                    res = transcribe_local_media.invoke({"path": fpath})
-                    if isinstance(res, str):
-                        res_json = json.loads(res)
-                    else:
-                        res_json = res
-                    if res_json.get("error"):
-                        ss.messages.append({"role": "assistant", "content": ensure_reply_language(f"Transcription failed: {res_json['error']}", ss.reply_lang)})
-                        st.rerun()
-                    transcript_path = Path(res_json.get("transcript_path", ""))
-                    if not transcript_path.is_absolute():
-                        transcript_path = (PROJECT_ROOT / transcript_path).resolve()
+                    transcript_obj = json.loads(transcript_path.read_text(encoding="utf-8"))
+                    transcript_raw = " ".join(
+                        s.get("text", "").strip()
+                        for s in transcript_obj.get("segments", [])
+                        if s.get("text")
+                    )
+                    clean_transcript = remove_json_block(transcript_raw)
+                except Exception:
+                    clean_transcript = ""
 
-                    # Load the raw transcript and remove JSON nutrition blocks before summarization
-                    try:
-                        transcript_obj = json.loads(transcript_path.read_text(encoding="utf-8"))
-                        transcript_raw = " ".join(
-                            s.get("text", "").strip() for s in transcript_obj.get("segments", []) if s.get("text")
-                        )
-                        clean_transcript = remove_json_block(transcript_raw)
-                        print(clean_transcript)  # or use st.text(clean_transcript) to display in the app
-                    except Exception:
-                        pass
-
-                    summ = summarize_transcript_file.invoke({"transcript_path": str(transcript_path), "target_lang": ss.reply_lang})
+                # (Optional but useful) short summary for the chat UI (cleaned)
+                try:
+                    summ = summarize_transcript_file.invoke({
+                        "transcript_path": str(transcript_path),
+                        "target_lang": ss.reply_lang
+                    })
                     summary_text = summ if isinstance(summ, str) else str(summ)
                     summary_text = remove_json_block(summary_text)
-                    ss.messages.append({"role": "user", "content": "(Mic) Please summarize ingredients and steps."})
-                    ss.messages.append({"role": "assistant", "content": summary_text})
-                    ss.last_bot_text = summary_text
-                    if ss.speaker_on:
-                        b64tts = _gtts_to_b64(summary_text)
-                        if b64tts:
-                            ss.last_tts_b64 = b64tts
+                except Exception:
+                    summary_text = ""
+
+                # Update context and a stable signature (prevents double-handling on rerun)
+                ss.ctx_text = (clean_transcript or "")[:4000]
+                ctx_id = hashlib.sha1((ss.ctx_text or "").encode("utf-8")).hexdigest()[:10]
+                ss.ctx_source = f"mic:{ctx_id}"
+                if ss.get("handled_ctx_sig") == ctx_id:
+                    st.stop()
+                ss.handled_ctx_sig = ctx_id
+                
+                # Try to guess a dish name from transcript or summary → feeds “recent dishes” box
+                dish_candidates = _extract_dishes(clean_transcript) or _extract_dishes(summary_text)
+                dish_hint = dish_candidates[0] if dish_candidates else ""
+                _update_recent_dishes(dish_candidates)
+
+                # Detect intent from transcript first, then summary as fallback
+                intent = _detect_intent(clean_transcript) or _detect_intent(summary_text)
+
+                # If no obvious intent → show summary and invite follow-up (normal chat over transcript)
+                if not intent:
+                    if summary_text:
+                        ss.messages.append({"role": "user", "content": "🎙️ (Mic upload) Please summarize."})
+                        ss.messages.append({"role": "assistant", "content": clean_transcript})
+                        ss.last_bot_text = clean_transcript
+                        if ss.speaker_on:
+                            b64tts = _gtts_to_b64(clean_transcript)
+                            if b64tts:
+                                ss.last_tts_b64 = b64tts
+                    ss.messages.append({
+                        "role": "assistant",
+                        "content": "Got it. Ask me anything about this recording (recipe, calorie count, or a shopping list)."
+                    })
+                    ss.handled_ctx_sig = ctx_id
                     st.rerun()
-                except Exception as e:
-                    ss.messages.append({"role": "assistant", "content": ensure_reply_language(f"Mic processing error: {e}", ss.reply_lang)})
-                    st.rerun()
+                # Determine language for this turn
+                det = detect_language(clean_transcript)
+                turn_lang = ss.reply_lang if ss.translate_on else (
+                    ss.session.reply_lang if (det == ss.session.reply_lang or len(clean_transcript) < 60) else det
+                )
+                # Call agent for answer
+                ans = chat_once(ss.agent, clean_transcript, reply_lang=turn_lang)
+                if ss.translate_on and turn_lang != ss.reply_lang:
+                    ans = ensure_reply_language(ans, ss.reply_lang)
+                # Append assistant reply
+                ss.messages.append({"role": "assistant", "content": ans})
+                _update_recent_dishes(_extract_dishes(ans))
+                ss.last_bot_text = ans
+                # Pre‑generate TTS if speaker is on
+                if ss.speaker_on:
+                    b64 = _gtts_to_b64(ans)
+                    if b64:
+                        ss.last_tts_b64 = b64
+                st.rerun()
+
+                # Build a “user bubble” preview for the mic request (nice chat UX)
+                preview = " ".join(ss.ctx_text.split())[:160]
+                label = "calorie count" if intent == "calories" else ("shopping list" if intent == "shopping_list" else "recipe")
+                ss.messages.append({"role": "user", "content": f"🎙️ Mic → {label} request\n> {preview}…"})
+
+            except Exception as e:
+                ss.messages.append({"role": "assistant", "content": ensure_reply_language(f"Mic processing error: {e}", ss.reply_lang)})
+                st.rerun()
     else:
         st.caption("Install 'audio-recorder-streamlit' to enable mic recording.")
 
-    # Speaker toggle (shows ON/OFF; pre‑generates TTS when turning on)
-    speaker_label = "🔊 Speaker: ON" if ss.speaker_on else "🔈 Speaker: OFF"
-    if st.button(speaker_label, use_container_width=True):
-        ss.speaker_on = not ss.speaker_on
-        if ss.speaker_on:
-            # Pre-generate audio for the most recent bot reply if available
-            if ss.last_bot_text:
-                b64 = _gtts_to_b64(ss.last_bot_text)
-                if b64:
-                    ss.last_tts_b64 = b64
-        else:
-            ss.last_tts_b64 = None
-        st.rerun()
-
-    st.markdown('</div>', unsafe_allow_html=True)
-
-    # with st.expander("📥 Seed knowledge base (YouTube/Web)"):
-    #     default_urls = """\
-    # https://www.youtube.com/watch?v=Gyz7s3cFjZU
-    # https://www.youtube.com/watch?v=NTpzPZajtEU
-    # https://www.youtube.com/watch?v=oPXfLnb8pFo
-    # https://www.youtube.com/watch?v=zZNhVv7fmSE
-    # https://www.youtube.com/watch?v=VRctr-tviIA
-    # https://www.youtube.com/watch?v=Swkq2jc5AnA
-    # https://www.youtube.com/watch?v=SkbOKonW6nU
-    # https://www.youtube.com/watch?v=K9qJQmOeohU
-    # https://www.youtube.com/watch?v=QlDzm8UXbk0
-    # https://www.youtube.com/watch?v=u8bdtAUpvlA"""
-    #     url_text = st.text_area("Paste one URL per line (YouTube or recipe webpages)", value=default_urls, height=180)
-    #     urls = [u.strip() for u in url_text.splitlines() if u.strip()]
-
-    #     col_a, col_b = st.columns(2)
-    #     seed_yt  = col_a.button("🎬 Ingest YouTube", use_container_width=True)
-    #     seed_web = col_b.button("🌐 Ingest Web Recipes (optional)", use_container_width=True)
-
-    #     st.caption(f"📚 KB docs (approx): **{kb_count()}**")
-
-    #     if seed_yt and urls:
-    #         ok = 0
-    #         with st.spinner("Seeding YouTube…"):
-    #             for i, u in enumerate([u for u in urls if "youtu" in u.lower()], 1):
-    #                 st.write(f"{i}. ▶️ {u}")
-    #                 try:
-    #                     out = summarize_video.invoke({"url": u, "target_lang": st.session_state.reply_lang})
-    #                     ok += 1
-    #                     st.session_state["kb_docs"] = st.session_state.get("kb_docs", 0) + 1
-    #                     st.caption(_as_str(out)[:220] + "…")
-    #                 except Exception as e:
-    #                     st.warning(f"⚠️ {u} → {e}")
-    #         st.success(f"Done: {ok} video(s) ingested. KB now ≈ {kb_count()} docs.")
-
-    #     if seed_web and urls:
-    #         ok = 0
-    #         with st.spinner("Seeding web recipes…"):
-    #             for i, u in enumerate([u for u in urls if "youtu" not in u.lower()], 1):
-    #                 st.write(f"{i}. 🌐 {u}")
-    #                 try:
-    #                     out = ingest_link.invoke({"url": u, "target_lang": st.session_state.reply_lang})
-    #                     ok += 1
-    #                     st.session_state["kb_docs"] = st.session_state.get("kb_docs", 0) + 1
-    #                     st.caption(_as_str(out)[:220] + "…")
-    #                 except Exception as e:
-    #                     st.warning(f"⚠️ {u} → {e}")
-    #         st.success(f"Done: {ok} page(s) ingested. KB now ≈ {kb_count()} docs.")
-    # imports (top of file)
-    # optional title resolver (graceful if missing)
 
 
-    # DEFAULT_YT = [
-    #     "https://www.youtube.com/watch?v=Gyz7s3cFjZU",
-    #     "https://www.youtube.com/watch?v=NTpzPZajtEU",
-    #     "https://www.youtube.com/watch?v=oPXfLnb8pFo",
-    #     "https://www.youtube.com/watch?v=zZNhVv7fmSE",
-    #     "https://www.youtube.com/watch?v=VRctr-tviIA",
-    #     "https://www.youtube.com/watch?v=Swkq2jc5AnA",
-    #     "https://www.youtube.com/watch?v=SkbOKonW6nU",
-    #     "https://www.youtube.com/watch?v=K9qJQmOeohU",
-    #     "https://www.youtube.com/watch?v=QlDzm8UXbk0",
-    #     "https://www.youtube.com/watch?v=u8bdtAUpvlA",
-    # ]
 
-    # with st.expander("🎬 Quick demo: pick a YouTube link"):
-    #     title_to_url = _title_map(DEFAULT_YT)
-    #     titles = list(title_to_url.keys())
-    #     choice_title = st.selectbox("Choose a video", titles, index=0)
-    #     choice_url = title_to_url[choice_title]
-
-    #     # optional preview thumbnail
-    #     vid = _yt_id(choice_url)
-    #     if vid:
-    #         st.image(f"https://img.youtube.com/vi/{vid}/hqdefault.jpg", width=320)
-
-    #     c1, c2 = st.columns(2)
-    #     btn_tx  = c1.button("📝 Transcript only", use_container_width=True)
-    #     btn_sum = c2.button("🧾 Summarize & add to KB", use_container_width=True)
-
-    #     if btn_tx:
-    #         try:
-    #             res = transcribe_media.invoke({"url_or_path": choice_url})
-    #             transcript = res if isinstance(res, str) else str(res)
-    #             # transcript = remove_json_block(transcript)
-    #             st.session_state.messages.append({"role": "assistant", "content": transcript or "No transcript found."})
-    #             st.session_state.last_bot_text = transcript
-    #             if st.session_state.get("speaker_on") and transcript:
-    #                 _gtts_to_b64(transcript)
-    #             st.rerun()   # if in a function, return afterwards; at top-level use st.stop()
-    #             st.stop()
-    #         except Exception as e:
-    #             st.warning(f"Transcript error: {e}")
-
-    #     if btn_sum:
-    #         try:
-    #             out = summarize_video.invoke({"url": choice_url, "target_lang": st.session_state.reply_lang})
-    #             summary = out if isinstance(out, str) else str(out)
-    #             # summary = remove_json_block(summary)
-    #             st.session_state.messages.append({"role": "assistant", "content": summary or "No summary available."})
-    #             st.session_state["kb_docs"] = st.session_state.get("kb_docs", 0) + 1
-    #             st.session_state.last_bot_text = summary
-    #             if st.session_state.get("speaker_on") and summary:
-    #                 _gtts_to_b64(summary)
-    #             st.rerun()   # if in a function, return afterwards; at top-level use st.stop()
-    #             st.stop()
-    #         except Exception as e:
-    #             st.warning(f"Summarize error: {e}")
-
-    # with st.expander("🚀 Seed entire demo list"):
-    #     if st.button("Seed all videos (summarize + upsert)", use_container_width=True):
-    #         ok = 0
-    #         prog = st.progress(0)
-    #         for i, url in enumerate(DEFAULT_YT, 1):
-    #             try:
-    #                 summarize_video.invoke({"url": url, "target_lang": st.session_state.reply_lang})
-    #                 ok += 1
-    #                 st.session_state["kb_docs"] = st.session_state.get("kb_docs", 0) + 1
-    #             except Exception as e:
-    #                 st.warning(f"⚠️ {url} → {e}")
-    #             prog.progress(int(i / len(DEFAULT_YT) * 100))
-    #         st.success(f"Seeded {ok}/{len(DEFAULT_YT)} videos. KB ≈ {st.session_state.get('kb_docs', 0)} docs.")

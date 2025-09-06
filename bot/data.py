@@ -41,17 +41,6 @@ def get_embedder():
 # from langchain_openai import OpenAIEmbeddings
 
 # ---- Centralized paths (update here only) ----
-# DEFAULT_YT_DIR   = Path(r"C:\Users\happy\Documents\ironhack\kusina-bot\final-project\src\backend\scrapers\data\recipes")
-# DEFAULT_YT_JSONL = Path(r"C:\Users\happy\Documents\ironhack\kusina-bot\final-project\src\backend\scrapers\data\recipes\recipes.jsonl")
-# DEFAULT_WB_DIR   = Path(r"C:\Users\happy\Documents\ironhack\kusina-bot\final-project\src\backend\scrapers\data\open_wikibooks_toc")
-# DEFAULT_WB_JSONL = Path(r"C:\Users\happy\Documents\ironhack\kusina-bot\final-project\src\backend\scrapers\data\open_wikibooks_toc\recipes.jsonl")
-# DEFAULT_VS_DIR   = Path(r"C:\Users\happy\Documents\ironhack\kusina-bot\final-project\src\backend\scrapers\data\vs")
-# # --- NEW: local data you collected ---
-# DEFAULT_SCRAPED_CSV = Path(r"C:\Users\happy\Documents\ironhack\kusina-bot\Reverse1\final-project\bot\data_recipes\txt\recipes_extracted_20250823_114251.csv")
-# DEFAULT_KUSINA_DIR  = Path(r"C:\Users\happy\Documents\ironhack\kusina-bot\Reverse1\final-project\bot\data_kusina")
-# KUSINA_INDEX_JSONL  = DEFAULT_KUSINA_DIR / "index" / "recipes_transcripts.jsonl"
-# KUSINA_CHUNKS_DIR   = DEFAULT_KUSINA_DIR / "chunks"
-# KUSINA_RAW_DIR      = DEFAULT_KUSINA_DIR / "raw"
 
 STATE_DIR  = Path(__file__).resolve().parents[1] / "state"
 STATE_DIR.mkdir(parents=True, exist_ok=True)
@@ -70,7 +59,7 @@ DEFAULT_WB_DIR   = DATA_DIR / "open_wikibooks_toc"
 DEFAULT_WB_JSONL = DEFAULT_WB_DIR / "recipes.jsonl"
 DEFAULT_VS_DIR   = DATA_DIR / "vs"
 
-DEFAULT_SCRAPED_CSV = APP_ROOT / "bot" / "data_recipes" / "txt" / "recipes_extracted.csv"
+DEFAULT_SCRAPED_CSV = APP_ROOT / "bot" / "data_recipes" / "txt" / "recipes_extracted_20250823_114251.csv"
 DEFAULT_KUSINA_DIR  = APP_ROOT / "bot" / "data_kusina"
 
 STATE_DIR  = APP_ROOT / "state"
