@@ -603,8 +603,8 @@ def build_or_load_vectorstore(
         embedding_function=embed,
     )
 
-    # If you have fresh texts to insert, add them explicitly
-    if texts and (rebuild or not vs.get().get("ids")):
+    coll = client.get_or_create_collection("recipes")
+    if texts and coll.count() == 0:
         vs.add_texts(texts=texts, metadatas=metas)
 
     return vs
