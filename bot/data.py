@@ -450,56 +450,6 @@ def _doc_to_page(d: RecipeDoc) -> str:
         "Steps:\n" + "\n".join(d.steps or []),
     ]).strip()
 
-# def build_or_load_vectorstore(docs: List["RecipeDoc"], persist_dir: Path, rebuild: bool = False):
-# def build_or_load_vectorstore(docs: List[RecipeDoc], persist_dir: Path = DEFAULT_VS_DIR, rebuild: bool = False):
-#     """
-#     Merge your scraped recipe docs with the canon and build/load a Chroma index.
-#     """
-#     # EMBED_MODEL = os.getenv("EMBED_MODEL", "sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2")
-#     # embed = HuggingFaceEmbeddings(model_name=EMBED_MODEL)
-#     embed = OpenAIEmbeddings(
-#         model=os.getenv("CHEF_EMBED_MODEL", "text-embedding-3-small"),
-#         timeout=30,
-#         max_retries=1,
-#     )
-#     persist_dir.mkdir(parents=True, exist_ok=True)
-
-#     # 1) Existing recipe docs → texts+metas
-#     texts, metas = [], []
-#     for d in docs:
-#         texts.append(_doc_to_page(d))
-#         metas.append({
-#             "id": d.id, "title": d.title, "url": d.url, "source": d.source,
-#             "image_url": d.image_url,
-#             "cuisine": d.cuisine, "country": d.country, "continent": d.continent,
-#             "region": d.region, "dish_type": d.dish_type, "course": d.course,
-#             "cook_time": d.cook_time_minutes, "servings": d.servings,
-#             "popularity_score": d.popularity_score,
-#             "signals_json": json.dumps(d.signals or {}, ensure_ascii=False),
-
-#             "ingredients_json": json.dumps(d.ingredients or [], ensure_ascii=False),
-#             "steps_json": json.dumps(d.steps or [], ensure_ascii=False),
-#             "dietary_tags_json": json.dumps(d.dietary_tags or [], ensure_ascii=False),
-
-#             "ingredients_text": "; ".join(d.ingredients or []),
-#             "lang": getattr(d, "lang", "") or "",
-#             "aliases": "",
-#         })
-
-#     # 2) Append canon
-#     canon_texts, canon_metas = _load_canon_foods_as_texts_metas()
-#     texts.extend(canon_texts)
-#     metas.extend(canon_metas)
-
-#     # 3) Build/load Chroma
-#     db_file = persist_dir / "chroma.sqlite"
-#     if rebuild or not db_file.exists():
-#         vs = Chroma.from_texts(texts=texts, embedding=embed, metadatas=metas, persist_directory=str(persist_dir))
-#     else:
-#         vs = Chroma(persist_directory=str(persist_dir), embedding_function=embed)
-#     return vs
-
-
 def build_or_load_vectorstore(
     docs: List["RecipeDoc"],
     persist_dir: Path = DEFAULT_VS_DIR,
@@ -569,28 +519,6 @@ def build_or_load_vectorstore(
         texts, metas = list(texts), list(metas)
     else:
         texts, metas = [], []
-
-    # 4) Create / load Chroma
-    # embed = get_embedder()
-    # db_file = persist_dir / "chroma.sqlite"
-    # if (texts and rebuild) or (texts and not db_file.exists()):
-    #     vs = Chroma.from_texts(
-    #         texts=texts,
-    #         embedding=embed,
-    #         metadatas=metas,
-    #         persist_directory=str(persist_dir),
-    #         collection_name="recipes",
-    #     )
-    # else:
-    #     # load existing collection (may still add later in your app)
-    #     vs = Chroma(
-    #         persist_directory=str(persist_dir),
-    #         embedding_function=embed,
-    #         collection_name="recipes",
-    #     )
-
-    # return vs
-
 
 # 4) Create / load Chroma (new client API)
     embed = get_embedder()

@@ -79,8 +79,65 @@ WELCOME_VIDEO = PROJECT_ROOT / "bot" / "favorites" / "welcomepage.mp4"
 BACKGROUND_IMG = PROJECT_ROOT / "bot" / "favorites" / "background.jpg"
 
 # ---------- Helpers ----------
-YES_WORDS = {"yes","yeah","yep","sure","ok","okay","please","go ahead","do it"}
-NO_WORDS  = {"no","nope","nah","not now","later"}
+YES_WORDS = {"yes","yeah","yep","sure","ok","okay","please","go ahead","do it","yup", "yessir", "please do", "yes please"}
+NO_WORDS  = {"no","nope","nah","not now","later", "no thanks", "nah thanks"}
+PLEASE_WORDS = {"please", "pls", "kindly", "please continue", "go on"}
+
+def _recent_dialog(n: int = 5) -> str:
+    """Return a compact transcript of the last n messages (oldest → newest)."""
+    msgs = st.session_state.get("messages", [])[-n:]
+    out = []
+    for m in msgs:
+        role = m.get("role", "user")
+        text = (m.get("content") or "").strip().replace("\n", " ")
+        out.append(f"{role}: {text}")
+    return "\n".join(out)
+
+def _last_assistant_question(n: int = 5) -> str:
+    """Find the most recent assistant question in the last n messages."""
+    for m in reversed(st.session_state.get("messages", [])[-n:]):
+        if m.get("role") == "assistant":
+            t = (m.get("content") or "").strip()
+            if "?" in t:
+                return t
+    return ""
+
+def _set_offer(task: str, payload: dict | None = None):
+    """Remember the last offer so a bare 'yes' has meaning."""
+    st.session_state["last_offer"] = {"task": task, "payload": payload or {}, "ts": time.time()}
+
+def _consume_offer():
+    st.session_state.pop("last_offer", None)
+
+def _answer_with_context(user_intent_fallback: str = "continue"):
+    """
+    Build a context-rich prompt that includes:
+      • last 5 exchanges
+      • last transcript (if any)
+      • the latest assistant question (if any)
+    """
+    ss = st.session_state
+    dialog = _recent_dialog(5)
+    last_q = _last_assistant_question(5)
+    transcript = (ss.get("ctx_text") or "").strip()
+    source = ss.get("ctx_source") or "recent"
+    # Prefer transcript when available
+    if transcript:
+        q = _build_augmented_query(
+            transcript,
+            source_label=source,
+            task_prompt=f"Using the transcript and the last 5 messages below, {user_intent_fallback}.",
+            user_q=f"Recent dialog:\n{dialog}\n\nLatest assistant question (if any): {last_q or '—'}"
+        )
+    else:
+        q = (
+            "Use the following recent dialog as authoritative context before answering. "
+            "If the user said 'yes', do what was last offered.\n\n"
+            f"{dialog}\n\n"
+            f"User intent: {user_intent_fallback}."
+        )
+    # Stick to the reply language currently selected
+    return chat_once(ss.agent, q, reply_lang=ss.reply_lang)
 
 def _set_pending(action: str, payload: dict | None = None):
     st.session_state["pending_action"] = action
@@ -304,88 +361,6 @@ def _apply_background():
         """,
         unsafe_allow_html=True,
     )
-# def _apply_background():
-#     """Apply a page background image and custom CSS for chat bubbles and controls."""
-#     b64 = _b64_file(BACKGROUND_IMG) if BACKGROUND_IMG.exists() else None
-#     mime = "image/png" if BACKGROUND_IMG.suffix.lower() == ".png" else "image/jpeg"
-
-#     # 1) Main CSS (f-string) — all CSS braces must be doubled {{ }}
-#     bg_rule = (
-#         f"background: url('data:{mime};base64,{b64}') center center / cover no-repeat fixed !important;"
-#         if b64 else ""
-#     )
-#     st.markdown(
-#         f"""
-#         <style>
-#         [data-testid="stAppViewContainer"] {{
-#             {bg_rule}
-#         }}
-#         [data-testid="stHeader"], [data-testid="stToolbar"] {{ background: transparent !important; }}
-#         .block-container {{
-#             background: transparent !important;
-#             padding-top: 5.8rem !important;
-#             padding-bottom: 1rem !important;
-#         }}
-#         /* Chat bubbles */
-#         .chat-bubble {{
-#             max-width: 78%;
-#             padding: 14px 16px;
-#             border: 2px solid #000;
-#             border-radius: 18px;
-#             background: #f8fff0;
-#             color: #111;
-#             margin: 8px 0 8px 0;
-#         }}
-#         .chat-bubble.user {{
-#             margin-left: auto;
-#             font-style: italic;
-#             font-weight: 700;
-#         }}
-#         .chat-bubble.bot {{
-#             margin-right: auto;
-#             font-family: cursive;
-#         }}
-#         /* Right rail sticky */
-#         .right-rail {{ position: sticky; top: 6rem; }}
-#         /* Icon button styling */
-#         .icon-btn button {{
-#             height: 44px; font-size: 22px;
-#             background: #f8fff0 !important;
-#             color: #000 !important;
-#             border: 1px solid #000 !important;
-#         }}
-#         /* Dropdown height */
-#         .stSelectbox div[data-baseweb="select"] > div {{
-#             min-height: 44px !important;
-#             height: 44px !important;
-#         }}
-#         </style>
-#         """,
-#         unsafe_allow_html= True,
-#     )
-
-#     # 2) Flash animation CSS (plain string, NOT an f-string) — no brace escaping needed
-#     st.markdown(
-#         """
-#         <style>
-#         /* Flash box for current dish */
-#         .focus-box {
-#           border: 2px solid #000;
-#           background: #fffbd1;
-#           padding: 12px 14px;
-#           border-radius: 12px;
-#           margin-bottom: 10px;
-#           animation: pulse 1.4s ease-in-out 2;
-#         }
-#         @keyframes pulse {
-#           0% { box-shadow: 0 0 0 0 rgba(255,200,0,.7); }
-#           70% { box-shadow: 0 0 0 12px rgba(255,200,0, 0); }
-#           100% { box-shadow: 0 0 0 0 rgba(255,200,0, 0); }
-#         }
-#         </style>
-#         """,
-#         unsafe_allow_html=True,
-#     )
 
 def _video_html(path: Path):
     """Render a looping video if the file exists."""
@@ -793,23 +768,59 @@ with mid:
             user_txt = (txt or "").strip().lower()
             pending = st.session_state.get("pending_action")
 
-            if pending and user_txt in YES_WORDS:
-                # Execute the pending action
+
+            txt_norm = (user_text or "").strip().lower()
+            offer = st.session_state.get("last_offer")
+            pending = st.session_state.get("pending_action")
+
+            # YES / PLEASE = accept last offer (or continue context)
+            if (txt_norm in YES_WORDS) or (txt_norm in PLEASE_WORDS):
+                handled = False
+
+                # 1) Honor your existing pending_action first
                 if pending == "offer_recipe":
                     dish = st.session_state.get("pending_payload", {}).get("dish", "")
-                    q = f"Please give me the full recipe for {dish}."
-                    ans = chat_once(st.session_state.agent, q, reply_lang=st.session_state.reply_lang)
-                    # ans = remove_json_block(ans)
+                    q = f"Please give me the full recipe for {dish}. Include brief tips."
+                    ans = chat_once(st.session_state.agent, _build_augmented_query(st.session_state.get("ctx_text",""), st.session_state.get("ctx_source",""), q), reply_lang=st.session_state.reply_lang)
                     st.session_state.messages.append({"role": "assistant", "content": ans})
-                    _consume_pending()
-                    if st.session_state.get("speaker_on"):
-                        _gtts_to_b64(ans)
+                    _consume_pending(); _consume_offer()
                     st.rerun(); st.stop()
 
-            elif pending and user_txt in NO_WORDS:
-                _consume_pending()
-                st.session_state.messages.append({"role":"assistant","content":"No problem — any other dish or cuisine?"})
+                # 2) If we have a remembered 'offer' (e.g., after a transcript), continue from it
+                if offer:
+                    ans = _answer_with_context(user_intent_fallback="please carry on with your last offer")
+                    st.session_state.messages.append({"role": "assistant", "content": ans})
+                    _consume_offer()
+                    st.rerun(); st.stop()
+
+                # 3) Fallback: continue based on recent dialog
+                ans = _answer_with_context(user_intent_fallback="continue helpfully")
+                st.session_state.messages.append({"role": "assistant", "content": ans})
                 st.rerun(); st.stop()
+
+            # NO = cancel the offer and ask what next
+            if txt_norm in NO_WORDS:
+                _consume_pending(); _consume_offer()
+                st.session_state.messages.append({"role": "assistant", "content": "No problem — what would you like to do next?"})
+                st.rerun(); st.stop()
+
+            # if pending and user_txt in YES_WORDS:
+            #     # Execute the pending action
+            #     if pending == "offer_recipe":
+            #         dish = st.session_state.get("pending_payload", {}).get("dish", "")
+            #         q = f"Please give me the full recipe for {dish}."
+            #         ans = chat_once(st.session_state.agent, q, reply_lang=st.session_state.reply_lang)
+            #         # ans = remove_json_block(ans)
+            #         st.session_state.messages.append({"role": "assistant", "content": ans})
+            #         _consume_pending()
+            #         if st.session_state.get("speaker_on"):
+            #             _gtts_to_b64(ans)
+            #         st.rerun(); st.stop()
+
+            # elif pending and user_txt in NO_WORDS:
+            #     _consume_pending()
+            #     st.session_state.messages.append({"role":"assistant","content":"No problem — any other dish or cuisine?"})
+            #     st.rerun(); st.stop()
 
 # else: continue normal flow (call agent with the actual user text)
 
@@ -939,8 +950,10 @@ with right:
                 ss.messages.append({"role": "user", "content": "(Uploaded media)"})
                 ss.messages.append({"role": "assistant", "content": summary_text})
                 _update_recent_dishes(_extract_dishes(summary_text))
-                ss.messages.append({"role": "assistant",
-                                    "content": "What would you like to know about this transcript? Ask me a question and I’ll answer from it."})
+                # Offer a next step + remember it
+                offer = "Would you like the full recipe for any dish mentioned, or a shopping list, or a calorie estimate?"
+                ss.messages.append({"role": "assistant", "content": offer})
+                _set_offer(task="followup_from_transcript", payload={"source": ss.get("ctx_source"), "hint": _extract_dishes(summary_text)})
                 ss.last_bot_text = summary_text
                 if ss.speaker_on:
                     b64tts = _gtts_to_b64(summary_text)
