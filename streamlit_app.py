@@ -13,6 +13,14 @@
 #   • Positions the LangSmith tracing toggle at the top left of the page.
 
 from __future__ import annotations
+# --- ensure modern sqlite for Chroma ---
+try:
+    import pysqlite3  # provided by pysqlite3-binary
+    import sys
+    sys.modules["sqlite3"] = sys.modules.pop("pysqlite3")
+except Exception:
+    pass
+# --------------------------------------
 
 import os, io, re, json, time, base64, tempfile, hashlib
 from pathlib import Path
@@ -1026,7 +1034,7 @@ with right:
                 if ss.get("handled_ctx_sig") == ctx_id:
                     st.stop()
                 ss.handled_ctx_sig = ctx_id
-                
+
                 # Try to guess a dish name from transcript or summary → feeds “recent dishes” box
                 dish_candidates = _extract_dishes(clean_transcript) or _extract_dishes(summary_text)
                 dish_hint = dish_candidates[0] if dish_candidates else ""
