@@ -3,10 +3,12 @@ import json, os, re
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
 from pydantic import BaseModel, Field
-from langchain_community.vectorstores import Chroma
+# from langchain_community.vectorstores import Chroma
 from langchain_openai import OpenAIEmbeddings
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 from langchain.schema import Document
+from langchain_chroma import Chroma
+from chromadb import PersistentClient
 # --- Embedding backend selector ---
 import os
 from dotenv import load_dotenv
@@ -569,22 +571,40 @@ def build_or_load_vectorstore(
         texts, metas = [], []
 
     # 4) Create / load Chroma
+    # embed = get_embedder()
+    # db_file = persist_dir / "chroma.sqlite"
+    # if (texts and rebuild) or (texts and not db_file.exists()):
+    #     vs = Chroma.from_texts(
+    #         texts=texts,
+    #         embedding=embed,
+    #         metadatas=metas,
+    #         persist_directory=str(persist_dir),
+    #         collection_name="recipes",
+    #     )
+    # else:
+    #     # load existing collection (may still add later in your app)
+    #     vs = Chroma(
+    #         persist_directory=str(persist_dir),
+    #         embedding_function=embed,
+    #         collection_name="recipes",
+    #     )
+
+    # return vs
+
+
+# 4) Create / load Chroma (new client API)
     embed = get_embedder()
-    db_file = persist_dir / "chroma.sqlite"
-    if (texts and rebuild) or (texts and not db_file.exists()):
-        vs = Chroma.from_texts(
-            texts=texts,
-            embedding=embed,
-            metadatas=metas,
-            persist_directory=str(persist_dir),
-            collection_name="recipes",
-        )
-    else:
-        # load existing collection (may still add later in your app)
-        vs = Chroma(
-            persist_directory=str(persist_dir),
-            embedding_function=embed,
-            collection_name="recipes",
-        )
+    client = PersistentClient(path=str(persist_dir))  # uses DuckDB+Parquet backend
+
+    # Always open (or create) the collection
+    vs = Chroma(
+        client=client,
+        collection_name="recipes",
+        embedding_function=embed,
+    )
+
+    # If you have fresh texts to insert, add them explicitly
+    if texts and (rebuild or not vs.get().get("ids")):
+        vs.add_texts(texts=texts, metadatas=metas)
 
     return vs
