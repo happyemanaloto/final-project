@@ -582,6 +582,14 @@ def _is_audio(ext: str) -> bool:
 def _is_video(ext: str) -> bool:
     return ext.lower() in {"mp4", "mov", "mkv", "webm", "m4v", "mpeg", "mpg", "avi"}
 
+def _pick_target_dish() -> str:
+    # Prefer your recent dishes list, else guess from the last 5 chat turns.
+    ss = st.session_state
+    if ss.get("recent_dishes"):
+        return ss.recent_dishes[0]
+    guessed = _extract_dishes(_recent_dialog(5))
+    return guessed[0] if guessed else "the dish we just discussed"
+
 # ---------- State ----------
 def _init_state():
     """Initialize or restore Streamlit session state for persistent variables."""
@@ -715,6 +723,18 @@ with mid:
     user_text = st.chat_input("What are you craving for…")
     if user_text:
         txt = user_text.strip()
+        txt_norm = (user_text or "").strip().lower()
+        offer = st.session_state.get("last_offer")
+        pending = st.session_state.get("pending_action")
+
+            # --- Offer detector: remember user intent so a later "yes" can execute it ---
+        if any(k in txt_norm for k in ["recipe", "steps"]):
+            _set_offer("recipe_for_dish", {"dish": _pick_target_dish()})
+        elif ("calorie" in txt_norm) or ("macro" in txt_norm) or ("nutrition" in txt_norm):
+            _set_offer("calorie_estimate", {"dish": _pick_target_dish()})
+        elif ("shop" in txt_norm) or ("grocery" in txt_norm) or ("shopping list" in txt_norm):
+            _set_offer("shopping_list", {"dish": _pick_target_dish()})
+
         if txt:
             # Append user message
             ss.messages.append({"role": "user", "content": txt})
@@ -798,10 +818,62 @@ with mid:
                     _consume_pending(); _consume_offer()
                     st.rerun(); st.stop()
 
-                # 2) If we have a remembered 'offer' (e.g., after a transcript), continue from it
+                # 2) If we have a remembered 'offer', execute it
                 if offer:
+                    task = offer.get("task")
+                    dish = (offer.get("payload") or {}).get("dish") or _pick_target_dish()
+
+                    if task == "calorie_estimate":
+                        # Try tool first; fall back to LLM if tool fails
+                        try:
+                            # estimate_nutrition is already imported at the top
+                            # Tools often return a string or dict; handle both
+                            result = estimate_nutrition.invoke({"dish": dish})
+                            ans = result if isinstance(result, str) else json.dumps(result)
+                        except Exception:
+                            q = f"Estimate calories and macros per serving for '{dish}'. " \
+                                f"Give a one-line summary plus a short bullet breakdown. Use prior context if useful."
+                            ans = chat_once(st.session_state.agent, _build_augmented_query(
+                                st.session_state.get("ctx_text",""),
+                                st.session_state.get("ctx_source","recent"),
+                                q
+                            ), reply_lang=st.session_state.reply_lang)
+
+                        st.session_state.messages.append({"role":"assistant","content": ans})
+                        _consume_offer()
+                        st.rerun(); st.stop()
+
+                    elif task == "recipe_for_dish":
+                        q = f"Please give me the full recipe for {dish}. Include brief tips."
+                        ans = chat_once(st.session_state.agent, _build_augmented_query(
+                            st.session_state.get("ctx_text",""),
+                            st.session_state.get("ctx_source","recent"),
+                            q
+                        ), reply_lang=st.session_state.reply_lang)
+                        st.session_state.messages.append({"role":"assistant","content": ans})
+                        _consume_offer()
+                        st.rerun(); st.stop()
+
+                    elif task == "shopping_list":
+                        try:
+                            result = make_shopping_list.invoke({"dish": dish})
+                            ans = result if isinstance(result, str) else json.dumps(result)
+                        except Exception:
+                            q = f"Make a concise grocery shopping list for '{dish}' grouped by section. " \
+                                f"Add approximate quantities for 4 servings."
+                            ans = chat_once(st.session_state.agent, _build_augmented_query(
+                                st.session_state.get("ctx_text",""),
+                                st.session_state.get("ctx_source","recent"),
+                                q
+                            ), reply_lang=st.session_state.reply_lang)
+
+                        st.session_state.messages.append({"role":"assistant","content": ans})
+                        _consume_offer()
+                        st.rerun(); st.stop()
+
+                    # Fallback: keep your original context-based continuation
                     ans = _answer_with_context(user_intent_fallback="please carry on with your last offer")
-                    st.session_state.messages.append({"role": "assistant", "content": ans})
+                    st.session_state.messages.append({"role":"assistant","content": ans})
                     _consume_offer()
                     st.rerun(); st.stop()
 
